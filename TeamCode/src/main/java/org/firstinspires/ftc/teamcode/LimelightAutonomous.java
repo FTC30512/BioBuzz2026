@@ -1,24 +1,26 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import java.util.List;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-
-
+@TeleOp(name = "Limelight Pipeline Checker", group = "Sensor")
 public class LimelightAutonomous extends LinearOpMode {
+    private Limelight3A limelight;
 
-    private boolean targetRedCell;
+    // Set to true to target Pipeline 2, or false to target Pipeline 1
+    private boolean targetRedCell = true;
 
     @Override
     public void runOpMode() throws InterruptedException {
-        initHardware();
+        // Initialize Limelight hardware (assuming it's configured in your hardware map)
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
-        telemetry.addData("Status", "Initialized. Target: " + (targetRedCell ? "RedCell (Pipeline 2)" : "BlueCell (Pipeline 1)"));
+        telemetry.addData("Status", "Initialized");
         telemetry.update();
 
         waitForStart();
@@ -26,92 +28,54 @@ public class LimelightAutonomous extends LinearOpMode {
         if (opModeIsActive()) {
 
             // ==========================================
-            // STEP 1: Run code using Pipeline 0
+            // STEP 1: Run and check Pipeline 0
             // ==========================================
             limelight.pipelineSwitch(0);
-            telemetry.addData("Status", "Running Pipeline 0 (Initial Detection)");
+            telemetry.addData("Pipeline", "0 (Initial Detection)");
             telemetry.update();
 
-            // Drive forward slightly or run initial routine
-            setDrivePower(0.3, 0.3, 0.3, 0.3);
-            long startTime = System.currentTimeMillis();
+            sleep(1000); // Give the camera time to process
 
-            while (opModeIsActive() && (System.currentTimeMillis() - startTime < 1500)) {
-                LLResult result = limelight.getLatestResult();
-                if (result != null && result.isValid()) {
-                    // Pipeline 0 data handling if needed
-                }
-                sleep(20);
+            LLResult result0 = limelight.getLatestResult();
+            if (result0 != null && result0.isValid()) {
+                telemetry.addData("Pipeline 0 Target", "Found (ID: " + result0.getFiducialResults() + ")");
+            } else {
+                telemetry.addData("Pipeline 0 Target", "Not Found");
             }
-
-            setDrivePower(0, 0, 0, 0);
-            sleep(500);
+            telemetry.update();
+            sleep(1000);
 
             // ==========================================
-            // STEP 2: Switch to Pipeline 2 (RedCell) or Pipeline 1 (BlueCell) & Align
+            // STEP 2: Switch to Pipeline 1 or 2 based on selection
             // ==========================================
             int targetPipeline = targetRedCell ? 2 : 1;
             limelight.pipelineSwitch(targetPipeline);
 
-            telemetry.addData("Status", "Switched to Pipeline " + targetPipeline + " (" + (targetRedCell ? "RedCell" : "BlueCell") + ")");
+            telemetry.addData("Pipeline", targetPipeline + " (" + (targetRedCell ? "RedCell" : "BlueCell") + ")");
             telemetry.update();
 
-            sleep(300); // Allow camera to stabilize
+            sleep(1000); // Allow camera to stabilize
 
-            boolean targetFound = false;
+            // Continuous check loop
+            while (opModeIsActive()) {
+                LLResult resultTarget = limelight.getLatestResult();
 
-            // Search for target and align000000000000000000000000000000000000000000000000000000000000000..
+                if (resultTarget != null && resultTarget.isValid()) {
+                    double tx = resultTarget.getTx();
+                    double ty = resultTarget.getTy();
+                    List<LLResultTypes.FiducialResult> tagId = resultTarget.getFiducialResults();
 
-            while (opModeIsActive() && !targetFound) {
-                YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-                limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
-
-                LLResult llResult = limelight.getLatestResult();
-
-                if (llResult != null && llResult.isValid()) {
-                    double tx = llResult.getTx();
-
-                    telemetry.addData("Status", "Target Detected on Pipeline " + targetPipeline);
-                    telemetry.addData("Tx Offset", tx);
-                    telemetry.update();
-
-                    if (Math.abs(tx) < 1.0) {
-                        setDrivePower(0, 0, 0, 0);
-                        targetFound = true; // Exits alignment loop
-                    } else {
-                        double kp = 0.02;
-                        double power = Math.min(Math.max(tx * kp, -0.4), 0.4);
-                        setDrivePower(-power, -power, power, power);
-                    }
+                    telemetry.addData("Active Pipeline", targetPipeline);
+                    telemetry.addData("Tag ID", tagId);
+                    telemetry.addData("Tx (X Offset)", tx);
+                    telemetry.addData("Ty (Y Offset)", ty);
                 } else {
-                    telemetry.addData("Status", "Searching for Target on Pipeline " + targetPipeline + "...");
-                    telemetry.update();
-                    setDrivePower(-0.2, -0.2, 0.2, 0.2); // Scan slowly
+                    telemetry.addData("Active Pipeline", targetPipeline);
+                    telemetry.addData("Status", "Searching for target...");
                 }
+                telemetry.update();
                 sleep(20);
             }
-
-            // ==========================================
-            // STEP 3: Hold Position (No Shooting)
-            // ==========================================
-            setDrivePower(0, 0, 0, 0);
-
-            telemetry.addData("Status", "Target Aligned! Holding Position.");
-            telemetry.update();
-
-            // Keep the OpMode running safely until autonomous ends
-            while (opModeIsActive()) {
-                sleep(50);
-            }
         }
-    }
-
-
-
-    private void initHardware() {
-
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.start();
-
     }
 }
