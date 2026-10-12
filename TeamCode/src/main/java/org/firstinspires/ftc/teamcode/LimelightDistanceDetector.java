@@ -16,9 +16,6 @@ public class LimelightDistanceDetector extends LinearOpMode {
     public void runOpMode() {
         // Initialize the Limelight from the hardware map
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-
-        // Switch to your AprilTag pipeline index (e.g., pipeline 1 or 2)
-        limelight.pipelineSwitch(1);
         limelight.start();
 
         telemetry.addData("Status", "Initialized. Waiting for start...");
