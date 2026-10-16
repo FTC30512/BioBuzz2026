@@ -25,12 +25,12 @@ public class Blue1_AllOneSide extends LinearOpMode {
 
     private final Pose start = poseFactory.of(85, 132, 270);
     private final Pose shoot1 = poseFactory.of(85, 107, 270);
-    private final Pose collectGardenPart1 = poseFactory.of(119.3584, 132.9845, 0);
+    private final Pose collectGardenPart1 = poseFactory.of(119.3584, 133, 0);
     private final Pose collectGardenPart1Control1 = poseFactory.of(98.2245, 124.082, 0);
     private final Pose collectGardenPart2 = poseFactory.of(132.6304, 133.0665, 0);
     private final Pose shoot2 = poseFactory.of(84.6459, 107.4188, 270);
     private final Pose shoot2Control1 = poseFactory.of(97.8903, 125.0242, 0);
-    private final Pose collectFlower = poseFactory.of(131.9119, 93.6183, 0);
+    private final Pose collectFlower = poseFactory.of(128, 94.5, 0);
     private final Pose shoot3 = poseFactory.of(84.9223, 107.5959, 270);
     private final Pose park = poseFactory.of(132.2288, 44.9007, 180);
     private final Pose parkControl1 = poseFactory.of(132.4007, 93.0769, 0);
