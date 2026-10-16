@@ -23,8 +23,8 @@ public class Blue2_BothFlowers extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(81.6606, 8.4888, 90);
-    private final Pose shoot1 = poseFactory.of(81.905, 23.0475, 90);
+    private final Pose start = poseFactory.of(81, 8, 90);
+    private final Pose shoot1 = poseFactory.of(81, 23, 90);
     private final Pose collectHomeFlowerPart1 = poseFactory.of(94.3333, 18.1091, 270);
     private final Pose collectHomeFlowerPart1Control1 = poseFactory.of(93.025, 22.9905, 0);
     private final Pose collectHomeFlowerPart2 = poseFactory.of(93.8377, 8.8212, 270);

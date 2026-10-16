@@ -23,8 +23,8 @@ public class Blue2_AllOneSide extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(81.6606, 8.4888, 90);
-    private final Pose shoot1 = poseFactory.of(81.9318, 17.6282, 90);
+    private final Pose start = poseFactory.of(81, 8, 90);
+    private final Pose shoot1 = poseFactory.of(81, 17, 90);
     private final Pose approachFlower = poseFactory.of(94.2529, 25.3491, 270);
     private final Pose collectPollen = poseFactory.of(94.1537, 8.4698, 270);
     private final Pose shoot2 = poseFactory.of(94.8477, 17.2615, 270);
