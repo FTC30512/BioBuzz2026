@@ -24,7 +24,7 @@ public class Blue1_OtherTeamCantShoot extends LinearOpMode {
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose start = poseFactory.of(85, 132, 270);
-    private final Pose shoot1 = poseFactory.of(85, 117.6252, 270);
+    private final Pose shoot1 = poseFactory.of(85, 123, 270);
     private final Pose point2 = poseFactory.of(121.6054, 133.1693, 0);
     private final Pose point2Control1 = poseFactory.of(93.4689, 127.4283, 0);
     private final Pose point3 = poseFactory.of(133.1019, 133.0691, 0);
