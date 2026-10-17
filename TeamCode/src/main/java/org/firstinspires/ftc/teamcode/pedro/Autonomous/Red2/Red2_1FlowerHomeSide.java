@@ -23,26 +23,22 @@ public class Red2_1FlowerHomeSide extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(59.9102, 133.3705, 270);
-    private final Pose shoot1 = poseFactory.of(59.6658, 117.1364, 270);
-    private final Pose collectFlowerPart1 = poseFactory.of(46.9154, 124.6952, 90);
-    private final Pose collectFlowerPart1Control1 = poseFactory.of(50.3566, 120.0518, 0);
-    private final Pose collectFlowerPart2 = poseFactory.of(46.9655, 133.386, 90);
-    private final Pose shoot2Part1 = poseFactory.of(46.9231, 124.6278, 89.7232);
-    private final Pose shoot2Part2Start = poseFactory.of(46.9231, 124.6278, 90);
-    private final Pose shoot2Part2 = poseFactory.of(59.8731, 116.8826, 270);
-    private final Pose shoot2Part2Control1 = poseFactory.of(50.3195, 119.5682, 0);
-    private final Pose park = poseFactory.of(9.7314, 116.8998, 180);
+    private final Pose start = poseFactory.of(60, 133, 270);
+    private final Pose startshoot = poseFactory.of(58, 117, 270);
+    private final Pose point2 = poseFactory.of(47.2639, 125.9349, 90);
+    private final Pose point2Control1 = poseFactory.of(46.9362, 117.7028, 0);
+    private final Pose point3Start = poseFactory.of(47.2639, 125.9349, 90);
+    private final Pose point3 = poseFactory.of(58, 117, 270);
+    private final Pose point3Control1 = poseFactory.of(47.2171, 117.6859, 0);
+    private final Pose point4 = poseFactory.of(12.2585, 109.0543, 270);
 
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
-                follow(follower, shoot1()),
-                follow(follower, collectFlowerPart1()),
-                follow(follower, collectFlowerPart2()),
-                follow(follower, shoot2Part1()),
-                follow(follower, shoot2Part2()),
-                follow(follower, park())
+                follow(follower, startshoot()),
+                follow(follower, path2()),
+                follow(follower, path3()),
+                follow(follower, path4())
         );
     }
 
@@ -73,27 +69,19 @@ public class Red2_1FlowerHomeSide extends LinearOpMode {
         }
     }
 
-    public Path shoot1() {
-        return line(start, shoot1).linear(start, shoot1);
+    public Path startshoot() {
+        return line(start, startshoot).constant(startshoot);
     }
 
-    public Path collectFlowerPart1() {
-        return curve(shoot1, collectFlowerPart1Control1, collectFlowerPart1).linear(shoot1, collectFlowerPart1);
+    public Path path2() {
+        return curve(startshoot, point2Control1, point2).tangent();
     }
 
-    public Path collectFlowerPart2() {
-        return line(collectFlowerPart1, collectFlowerPart2).linear(collectFlowerPart1, collectFlowerPart2);
+    public Path path3() {
+        return curve(point3Start, point3Control1, point3).linear(point3Start, point3);
     }
 
-    public Path shoot2Part1() {
-        return line(collectFlowerPart2, shoot2Part1).reverseTangent();
-    }
-
-    public Path shoot2Part2() {
-        return curve(shoot2Part2Start, shoot2Part2Control1, shoot2Part2).linear(shoot2Part2Start, shoot2Part2);
-    }
-
-    public Path park() {
-        return line(shoot2Part2, park).linear(shoot2Part2, park);
+    public Path path4() {
+        return line(point3, point4).constant(point4);
     }
 }
