@@ -142,7 +142,7 @@ public class EWTeleOp extends LinearOpMode {
 //            telemetry.update();
             telemetry.addData("Lx", gamepad1.left_stick_x);
             telemetry.addData("Ly", gamepad1.left_stick_y);
-            telemetry.addData("ShooterVelocity", shooter.getVelocity());
+            //telemetry.addData("ShooterVelocity", shooter.getVelocity());
             telemetry.update();
         }
     }
