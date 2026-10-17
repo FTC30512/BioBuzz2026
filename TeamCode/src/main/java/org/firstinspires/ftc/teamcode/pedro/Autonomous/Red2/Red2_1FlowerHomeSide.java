@@ -24,7 +24,7 @@ public class Red2_1FlowerHomeSide extends LinearOpMode {
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose start = poseFactory.of(59, 132, 270);
-    private final Pose shoot1 = poseFactory.of(59.6658, 117.1364, 270);
+    private final Pose shoot1 = poseFactory.of(59, 117.1364, 270);
     private final Pose collectFlowerPart1 = poseFactory.of(46.9154, 124.6952, 90);
     private final Pose collectFlowerPart1Control1 = poseFactory.of(50.3566, 120.0518, 0);
     private final Pose collectFlowerPart2 = poseFactory.of(46.9655, 133.386, 90);
