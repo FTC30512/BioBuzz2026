@@ -24,15 +24,15 @@ public class Red2_1FlowerHomeSide extends LinearOpMode {
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose start = poseFactory.of(59, 132, 270);
-    private final Pose shoot1 = poseFactory.of(59, 117.1364, 270);
-    private final Pose collectFlowerPart1 = poseFactory.of(46.9154, 124.6952, 90);
-    private final Pose collectFlowerPart1Control1 = poseFactory.of(50.3566, 120.0518, 0);
-    private final Pose collectFlowerPart2 = poseFactory.of(46.9655, 133.386, 90);
-    private final Pose shoot2Part1 = poseFactory.of(46.9231, 124.6278, 89.7232);
-    private final Pose shoot2Part2Start = poseFactory.of(46.9231, 124.6278, 90);
-    private final Pose shoot2Part2 = poseFactory.of(59.8731, 116.8826, 270);
-    private final Pose shoot2Part2Control1 = poseFactory.of(50.3195, 119.5682, 0);
-    private final Pose park = poseFactory.of(9.7314, 116.8998, 180);
+    private final Pose shoot1 = poseFactory.of(59, 117, 270);
+    private final Pose collectFlowerPart1 = poseFactory.of(47, 124.7, 90);
+    private final Pose collectFlowerPart1Control1 = poseFactory.of(50.4, 120, 0);
+    private final Pose collectFlowerPart2 = poseFactory.of(47, 133, 90);
+    private final Pose shoot2Part1 = poseFactory.of(47, 124.6, 90);
+    private final Pose shoot2Part2Start = poseFactory.of(47, 124.6, 90);
+    private final Pose shoot2Part2 = poseFactory.of(60, 117, 270);
+    private final Pose shoot2Part2Control1 = poseFactory.of(50, 119.6, 0);
+    private final Pose park = poseFactory.of(9.7, 117, 180);
 
     // Autonomous routine
     public Command autoRoutine() {
