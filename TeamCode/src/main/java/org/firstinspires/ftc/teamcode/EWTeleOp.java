@@ -5,6 +5,7 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -19,45 +20,22 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
 @TeleOp(name = "EW TeleOp", group = "Main")
 public class EWTeleOp extends LinearOpMode {
-
-    private LLResult llResult;
     private ElapsedTime runtime = new ElapsedTime();
-
-    private Limelight3A limelight;
-
     // --- Motors ---
-    private DcMotor leftFront, leftRear, rightFront, rightRear, intake;
+    private DcMotor leftFront, leftRear, rightFront, rightRear, intake, integration;
     private DcMotorEx shooter;
+    private CRServo leftCR, rightCR;
 
     // --- Sensors ---
     private IMU imu;
-
     // --- Helper Classes ---
     private Movement movement;
-
-
-    private int IdNum = 25;
-
-    private double offset;
-
-    private int shooterSpeedMin = 2200, shooterSpeedMax = 2475;
-    private double shooterSpeed;
-
-    //private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
+    private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     @Override
     public void runOpMode() {
 
         // --- Initialize hardware ---
         initHardware();
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(1);
-        imu = hardwareMap.get(IMU.class, "imu");
-        RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.LEFT);
-        imu.initialize(new IMU.Parameters(revHubOrientationOnRobot));
-        limelight.start();
-
 
         // --- Initialize helpers ---
         movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, imu);
@@ -68,8 +46,6 @@ public class EWTeleOp extends LinearOpMode {
 
         waitForStart();
 
-        limelight.start();
-
         // --- Main loop ---
         while (opModeIsActive()) {
 
@@ -77,17 +53,9 @@ public class EWTeleOp extends LinearOpMode {
                 gamepad1.rumble(15000);
             }
 
-            YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-            limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
-            llResult = limelight.getLatestResult();
-            if (llResult != null && llResult.isValid()){
-                Pose3D botPose = llResult.getBotpose();
-//                telemetry.addData("Tx", llResult.getTx());
-//                telemetry.addData("Ty", llResult.getTy());
-//                telemetry.addData("Ta", llResult.getTa());
-//                telemetry.update();
-            }
+            shooter.setVelocity(1400);
 
+            // --- Intake ---
             if (gamepad1.left_bumper){
                 intake.setPower(-1);
             }else {
@@ -101,39 +69,14 @@ public class EWTeleOp extends LinearOpMode {
             // --- Driving ---
             movement.drive();
 
-            // --- Intake ---
-            intake.setPower(1);
-
             if (gamepad1.right_trigger > 0.5){
                 shoot();
                 telemetry.addLine("Shooting");
             }
-            if (llResult != null && llResult.isValid()){
-                if (llResult.getTa() > 0.35) {
-                    shooterSpeed = (-275 * llResult.getTa()) + 2557.5;
-                }else{
-                    shooterSpeed = 2900;
-                }
-            }
-
-            if (llResult != null && llResult.isValid() && !llResult.getFiducialResults().isEmpty()) {
-                IdNum = llResult.getFiducialResults().get(0).getFiducialId();
-                telemetry.addData("AprilTag ID", IdNum);
-            } else {
-                telemetry.addLine("No AprilTag detected");
-            }
-
-            if (IdNum == 24){
-                offset = 2.5 ;
-            } else if (IdNum == 20) {
-                offset = 1;
-            }
-
-            shooter.setVelocity(shooterSpeed);
-
-            if (gamepad1.x) {
-                shoot();
-                telemetry.addLine("Shooting");
+            else{
+                leftCR.setPower(0);
+                rightCR.setPower(0);
+                integration.setPower(0);
             }
 
             // --- Telemetry ---
@@ -157,29 +100,27 @@ public class EWTeleOp extends LinearOpMode {
         intake = hardwareMap.dcMotor.get("Intake");
         shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
 
-        //shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
+        integration = hardwareMap.dcMotor.get("Integration");
+        leftCR = hardwareMap.get(CRServo.class, "leftCR");
+        rightCR = hardwareMap.get(CRServo.class, "rightCR");
 
-        leftFront.setDirection(DcMotor.Direction.REVERSE);
-        leftRear.setDirection(DcMotor.Direction.REVERSE);
+        shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
+
+        //leftFront.setDirection(DcMotor.Direction.REVERSE);
+        //leftRear.setDirection(DcMotor.Direction.REVERSE);
         shooter.setDirection(DcMotorSimple.Direction.REVERSE);
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Sensors
         imu = hardwareMap.get(IMU.class, "imu");
 
         IMU.Parameters parameters = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
-                        RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                        RevHubOrientationOnRobot.UsbFacingDirection.LEFT
+                        RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
+                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
                 )
         );
         imu.initialize(parameters);
-
-        AprilTagLibrary aprilTagLibrary = new AprilTagLibrary.Builder()
-                .build();
-
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(1);
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -190,53 +131,9 @@ public class EWTeleOp extends LinearOpMode {
 
     // --- Shooting method ---
     public void shoot() {
-
-    }
-
-    private double getHeading() {
-        double angle = getRawHeading();
-        if (angle > 180) angle -= 360;
-        if (angle < -180) angle += 360;
-        return angle;
-    }
-
-    private double getRawHeading() {
-        YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
-        return angles.getYaw(AngleUnit.DEGREES);
-    }
-
-    public void pid_turn_by_gyro(double targetYaw, double speed){
-        targetYaw=-targetYaw;
-        double currentYaw = getHeading();
-        double error;
-        double actYaw = getHeading() + targetYaw;
-        double kp = 0.02;
-        while(Math.abs(actYaw - getHeading()) > 0.5){
-
-            error = kp * (actYaw - getHeading());
-            double power;
-            if(error > 0)
-                power = Math.min(Math.max(error, 0.15), speed);
-            else
-                power = Math.min(Math.max(error, -speed), -0.15);
-
-            telemetry.addLine("Current Heading angle" + getHeading());
-            telemetry.addLine( "Target Angle" + targetYaw);
-            telemetry.addLine("Actual Target Yaw" + actYaw);
-            telemetry.addLine("Actual Power " + power);
-            telemetry.update();
-            setDrivePower(-power, -power, power, power );
-        }
-        setDrivePower(0,0,0,0 );
-
-    }
-
-    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
-    {
-        leftFront.setPower(lfPower);
-        leftRear.setPower(lrPower);
-        rightFront.setPower(rfPower);
-        rightRear.setPower(rrPower);
+        leftCR.setPower(-1);
+        rightCR.setPower(1);
+        integration.setPower(1);
     }
 }
 
