@@ -1,5 +1,6 @@
-package org.firstinspires.ftc.teamcode.pedro.Autonomous.Red2;
+package org.firstinspires.ftc.teamcode.pedro.Autonomous.Blue1;
 
+import static com.pedropathing.api.Paths.*;
 import com.pedropathing.api.Paths;
 
 import com.pedropathing.api.PoseFactory;
@@ -9,6 +10,7 @@ import com.pedropathing.paths.Path;
 import com.pedropathing.ivy.Command;
 import com.pedropathing.ivy.Scheduler;
 import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.commands.Commands.*;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -18,35 +20,36 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
-@Autonomous(name = "Red2_AwayFlowerShootOtherSide", group = "Red2")
-public class Red2_AwayFlowerShootOtherSide extends LinearOpMode {
+@Autonomous(name = "Blue1_NoFlowers", group = "Blue1")
+public class Blue1_NoFlowers extends LinearOpMode {
 
     private Follower follower;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(60, 132, -90);
-    private final Pose shoot1 = poseFactory.of(58, 117, -90);
-    private final Pose collectAwayFlowerPart1Start = poseFactory.of(58, 117, 270);
-    private final Pose collectAwayFlowerPart1 = poseFactory.of(30, 80, 270);
-    private final Pose collectAwayFlowerPart1Control1 = poseFactory.of(32, 114.8, 0);
-    private final Pose collectAwayFlowerPart2Start = poseFactory.of(30, 80, 270);
-    private final Pose collectAwayFlowerPart2 = poseFactory.of(16, 47, 180);
-    private final Pose collectAwayFlowerPart2Control1 = poseFactory.of(23, 48, 0);
-    private final Pose shoot2OtherSideStart = poseFactory.of(16, 47, 180);
-    private final Pose shoot2OtherSide = poseFactory.of(58, 33, 90);
-    private final Pose shoot2OtherSideControl1 = poseFactory.of(28.5, 34.7, 0);
-    private final Pose parkStart = poseFactory.of(58, 33, 90);
-    private final Pose park = poseFactory.of(11, 117, 180);
-    private final Pose parkControl1 = poseFactory.of(19.6, 40, 0);
+    private final Pose start = poseFactory.of(82.5, 133, 270);
+    private final Pose shoot1 = poseFactory.of(84, 123, 270);
+    private final Pose collectGardenPart1Start = poseFactory.of(84, 123, 0);
+    private final Pose collectGardenPart1 = poseFactory.of(120, 132, 0);
+    private final Pose collectGardenPart2Start = poseFactory.of(120, 132, 0);
+    private final Pose collectGardenPart2 = poseFactory.of(132, 132, 0);
+    private final Pose shoot2Part1Start = poseFactory.of(132, 132, 0);
+    private final Pose shoot2Part1 = poseFactory.of(83, 94, 90);
+    private final Pose shoot2Part1Control1 = poseFactory.of(90, 125, 0);
+    private final Pose shoot2Part2Start = poseFactory.of(83, 94, 90);
+    private final Pose shoot2Part2 = poseFactory.of(83, 35, 90);
+    private final Pose parkStart = poseFactory.of(83, 35, 90);
+    private final Pose park = poseFactory.of(130, 46, 180);
+    private final Pose parkControl1 = poseFactory.of(120, 36, 0);
 
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
                 follow(follower, shoot1()),
-                follow(follower, collectAwayFlowerPart1()),
-                follow(follower, collectAwayFlowerPart2()),
-                follow(follower, shoot2OtherSide()),
+                follow(follower, collectGardenPart1()),
+                follow(follower, collectGardenPart2()),
+                follow(follower, shoot2Part1()),
+                follow(follower, shoot2Part2()),
                 follow(follower, park())
         );
     }
@@ -88,16 +91,20 @@ public class Red2_AwayFlowerShootOtherSide extends LinearOpMode {
         return Paths.line(start, shoot1).linear(start, shoot1);
     }
 
-    public Path collectAwayFlowerPart1() {
-        return Paths.curve(collectAwayFlowerPart1Start, collectAwayFlowerPart1Control1, collectAwayFlowerPart1).linear(collectAwayFlowerPart1Start, collectAwayFlowerPart1);
+    public Path collectGardenPart1() {
+        return Paths.line(collectGardenPart1Start, collectGardenPart1).linear(collectGardenPart1Start, collectGardenPart1);
     }
 
-    public Path collectAwayFlowerPart2() {
-        return Paths.curve(collectAwayFlowerPart2Start, collectAwayFlowerPart2Control1, collectAwayFlowerPart2).linear(collectAwayFlowerPart2Start, collectAwayFlowerPart2);
+    public Path collectGardenPart2() {
+        return Paths.line(collectGardenPart2Start, collectGardenPart2).linear(collectGardenPart2Start, collectGardenPart2);
     }
 
-    public Path shoot2OtherSide() {
-        return Paths.curve(shoot2OtherSideStart, shoot2OtherSideControl1, shoot2OtherSide).linear(shoot2OtherSideStart, shoot2OtherSide);
+    public Path shoot2Part1() {
+        return Paths.curve(shoot2Part1Start, shoot2Part1Control1, shoot2Part1).linear(shoot2Part1Start, shoot2Part1);
+    }
+
+    public Path shoot2Part2() {
+        return Paths.line(shoot2Part2Start, shoot2Part2).linear(shoot2Part2Start, shoot2Part2);
     }
 
     public Path park() {
