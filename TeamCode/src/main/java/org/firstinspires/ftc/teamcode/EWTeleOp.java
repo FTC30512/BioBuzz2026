@@ -38,7 +38,7 @@ public class EWTeleOp extends LinearOpMode {
         initHardware();
 
         // --- Initialize helpers ---
-        movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, imu);
+        movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, imu, telemetry);
 
         telemetry.addLine("Initialized. Press PLAY to start.");
         telemetry.update();
@@ -49,13 +49,9 @@ public class EWTeleOp extends LinearOpMode {
         // --- Main loop ---
         while (opModeIsActive()) {
 
-            if (runtime.seconds() > 105){
-                gamepad1.rumble(15000);
-            }
+            shooter.setVelocity(1350);
 
-            shooter.setVelocity(1400);
-
-            // --- Intake ---
+//             --- Intake ---
             if (gamepad1.left_bumper){
                 intake.setPower(-1);
             }else {
@@ -83,10 +79,7 @@ public class EWTeleOp extends LinearOpMode {
 //            telemetry.addData("Shooter Servo Position", shooterServo.getPosition());
 //            telemetry.addData("Shooter Power", shooter.getPower());
 //            telemetry.update();
-            telemetry.addData("Lx", gamepad1.left_stick_x);
-            telemetry.addData("Ly", gamepad1.left_stick_y);
             //telemetry.addData("ShooterVelocity", shooter.getVelocity());
-            telemetry.update();
         }
     }
 
@@ -106,8 +99,9 @@ public class EWTeleOp extends LinearOpMode {
 
         shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
 
-        //leftFront.setDirection(DcMotor.Direction.REVERSE);
-        //leftRear.setDirection(DcMotor.Direction.REVERSE);
+        leftFront.setDirection(DcMotor.Direction.REVERSE);
+        leftRear.setDirection(DcMotor.Direction.REVERSE);
+        rightRear.setDirection(DcMotor.Direction.REVERSE);
         shooter.setDirection(DcMotorSimple.Direction.REVERSE);
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
