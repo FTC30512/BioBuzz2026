@@ -39,7 +39,7 @@ public class EWTeleOp extends LinearOpMode {
         initHardware();
 
         // --- Initialize helpers ---
-        movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint);
+        movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint, telemetry);
 
         telemetry.addLine("Initialized. Press PLAY to start.");
         telemetry.update();
@@ -51,7 +51,11 @@ public class EWTeleOp extends LinearOpMode {
         while (opModeIsActive()) {
 
             shooter.setVelocity(1350);
+            pinpoint.update ();
 
+            if (gamepad1.b) {
+                resetHeading ();
+            }
 //             --- Intake ---
             if (gamepad1.left_bumper){
                 intake.setPower(-1);
@@ -64,11 +68,11 @@ public class EWTeleOp extends LinearOpMode {
             }
 
             // --- Driving ---
-            movement.drive();
+            movement.drive( pinpoint.getHeading (AngleUnit.RADIANS) );
 
             if (gamepad1.right_trigger > 0.5){
                 shoot();
-                telemetry.addLine("Shooting");
+                //telemetry.addLine("Shooting");
             }
             else{
                 leftCR.setPower(0);
@@ -81,6 +85,8 @@ public class EWTeleOp extends LinearOpMode {
 //            telemetry.addData("Shooter Power", shooter.getPower());
 //            telemetry.update();
             //telemetry.addData("ShooterVelocity", shooter.getVelocity());
+            telemetry.addData ( "pinpoint heading: ", pinpoint.getHeading ( AngleUnit.DEGREES ) );
+            telemetry.update ();
         }
     }
 
@@ -109,8 +115,8 @@ public class EWTeleOp extends LinearOpMode {
         // Sensors
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
-        pinpoint.setOffsets ( -5.0105808288093625, 7.930427611343504, DistanceUnit.INCH );
-        pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.REVERSED,
+        pinpoint.setOffsets ( -7.0, -5.625, DistanceUnit.INCH );
+        pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.FORWARD,
                 GoBildaPinpointDriver.EncoderDirection.REVERSED );
         pinpoint.setEncoderResolution ( GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD );
         pinpoint.resetPosAndIMU ();
@@ -127,6 +133,10 @@ public class EWTeleOp extends LinearOpMode {
         leftCR.setPower(-1);
         rightCR.setPower(1);
         integration.setPower(1);
+    }
+
+    public void resetHeading() {
+        pinpoint.resetPosAndIMU ();
     }
 }
 
