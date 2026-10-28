@@ -2,18 +2,19 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
@@ -27,7 +28,7 @@ public class EWTeleOp extends LinearOpMode {
     private CRServo leftCR, rightCR;
 
     // --- Sensors ---
-    private IMU imu;
+    private GoBildaPinpointDriver pinpoint;
     // --- Helper Classes ---
     private Movement movement;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
@@ -38,7 +39,7 @@ public class EWTeleOp extends LinearOpMode {
         initHardware();
 
         // --- Initialize helpers ---
-        movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, imu, telemetry);
+        movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint);
 
         telemetry.addLine("Initialized. Press PLAY to start.");
         telemetry.update();
@@ -106,15 +107,13 @@ public class EWTeleOp extends LinearOpMode {
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Sensors
-        imu = hardwareMap.get(IMU.class, "imu");
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
-        IMU.Parameters parameters = new IMU.Parameters(
-                new RevHubOrientationOnRobot(
-                        RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
-                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
-                )
-        );
-        imu.initialize(parameters);
+        pinpoint.setOffsets ( -5.0105808288093625, 7.930427611343504, DistanceUnit.INCH );
+        pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.REVERSED,
+                GoBildaPinpointDriver.EncoderDirection.REVERSED );
+        pinpoint.setEncoderResolution ( GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD );
+        pinpoint.resetPosAndIMU ();
 
         for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
