@@ -34,6 +34,8 @@ public class EWTeleOp extends LinearOpMode {
     // --- Helper Classes ---
     private Movement movement;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
+    private boolean is_lowered = false;
+
     @Override
     public void runOpMode() {
 
@@ -77,12 +79,20 @@ public class EWTeleOp extends LinearOpMode {
                 rightCR.setPower(0);
                 integration.setPower(0);
             }
-            if (gamepad1.right_bumper) {
-                lowerDolphin();
-            }
 
             if (gamepad1.left_bumper){
-                liftDolphin();
+                if (is_lowered) {
+                    liftDolphin ();
+                }
+                else
+                {
+                    lowerDolphin ();
+                }
+            }
+
+            if (gamepad1.yWasPressed ())
+            {
+                intake.setPower ( -1 );
             }
 
             // --- Telemetry ---
@@ -135,10 +145,12 @@ public class EWTeleOp extends LinearOpMode {
     public void lowerDolphin(){
         leftDolphin.setPosition(0.535);
         rightDolphin.setPosition(0.8);
+        is_lowered = true;
     }
     public void liftDolphin(){
         leftDolphin.setPosition(0.15);
         rightDolphin.setPosition(0.25);
+        is_lowered = false;
     }
     // --- Shooting method ---
     public void shoot() {
