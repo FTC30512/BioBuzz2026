@@ -25,18 +25,18 @@ public class Blue1_BothSidesFlowers extends LinearOpMode {
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose start = poseFactory.of(85, 132, 90);
-    private final Pose shoot1 = poseFactory.of(85, 123, 270);
-    private final Pose collectPollen = poseFactory.of(133.7067, 95.0195, 0);
-    private final Pose collectPollenControl1 = poseFactory.of(101.8922, 99.3089, 0);
-    private final Pose approachShoot = poseFactory.of(118.1652, 64.9325, 90);
-    private final Pose approachShootControl1 = poseFactory.of(118.2555, 89.598, 0);
-    private final Pose shoot2 = poseFactory.of(83.3621, 28.5029, 90);
-    private final Pose shoot2Control1 = poseFactory.of(118.3103, 26.944, 0);
-    private final Pose collectPollen_2 = poseFactory.of(94.6494, 10.4799, 270);
-    private final Pose approachShoot_2 = poseFactory.of(95.9124, 19.8118, 270);
-    private final Pose shoot3 = poseFactory.of(98.8147, 27.658, 115);
-    private final Pose park = poseFactory.of(130.7249, 42.9735, 0);
-    private final Pose parkControl1 = poseFactory.of(112.4971, 42.1739, 0);
+    private final Pose shoot1 = poseFactory.of(85, 107, 270);
+    private final Pose collectPollen = poseFactory.of(133.7, 95, 0);
+    private final Pose collectPollenControl1 = poseFactory.of(102, 99, 0);
+    private final Pose approachShoot = poseFactory.of(118, 65, 90);
+    private final Pose approachShootControl1 = poseFactory.of(118, 89.6, 0);
+    private final Pose shoot2 = poseFactory.of(83, 28.5, 90);
+    private final Pose shoot2Control1 = poseFactory.of(118.3, 27, 0);
+    private final Pose collectPollen_2 = poseFactory.of(94.6, 10.5, 270);
+    private final Pose approachShoot_2 = poseFactory.of(96, 19.8, 270);
+    private final Pose shoot3 = poseFactory.of(98.8, 27.7, 115);
+    private final Pose park = poseFactory.of(130.7, 43, 0);
+    private final Pose parkControl1 = poseFactory.of(112.5, 42.2, 0);
 
     // Autonomous routine
     public Command autoRoutine() {

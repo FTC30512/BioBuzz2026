@@ -25,7 +25,7 @@ public class Blue1_BothSides1FlowerOtherSide extends LinearOpMode {
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose start = poseFactory.of(85, 132, 270);
-    private final Pose shoot1 = poseFactory.of(85, 123, 270);
+    private final Pose shoot1 = poseFactory.of(85, 107, 270);
     private final Pose collectPollenStart = poseFactory.of(85, 123, 0);
     private final Pose collectPollen = poseFactory.of(132.0802, 92.5798, 0);
     private final Pose collectPollenControl1 = poseFactory.of(101.8922, 99.3089, 0);

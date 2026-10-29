@@ -24,19 +24,19 @@ public class Blue1_OtherTeamCantShoot extends LinearOpMode {
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose start = poseFactory.of(85, 132, 270);
-    private final Pose shoot1 = poseFactory.of(85, 117.6252, 270);
-    private final Pose point2 = poseFactory.of(121.6054, 133.1693, 0);
-    private final Pose point2Control1 = poseFactory.of(93.4689, 127.4283, 0);
-    private final Pose point3 = poseFactory.of(133.1019, 133.0691, 0);
-    private final Pose point4 = poseFactory.of(82.9499, 94.1917, 90);
-    private final Pose point4Control1 = poseFactory.of(90.1494, 125.7677, 0);
-    private final Pose point5 = poseFactory.of(82.7081, 34.4991, 90);
-    private final Pose point6 = poseFactory.of(94.5259, 17.2401, 270);
-    private final Pose point6Control1 = poseFactory.of(95.3713, 29.3722, 0);
-    private final Pose point7 = poseFactory.of(94.4836, 8.9508, 270);
-    private final Pose point8 = poseFactory.of(94.5984, 17.3722, 270);
-    private final Pose point9 = poseFactory.of(97.5086, 34.4715, 130);
-    private final Pose point10 = poseFactory.of(131.2142, 26.6813, 0);
+    private final Pose shoot1 = poseFactory.of(85, 107, 270);
+    private final Pose point2 = poseFactory.of(121.6, 133, 0);
+    private final Pose point2Control1 = poseFactory.of(93.5, 127.5, 0);
+    private final Pose point3 = poseFactory.of(133, 133, 0);
+    private final Pose point4 = poseFactory.of(83, 94, 90);
+    private final Pose point4Control1 = poseFactory.of(90, 125.75, 0);
+    private final Pose point5 = poseFactory.of(82.7, 34.5, 90);
+    private final Pose point6 = poseFactory.of(94.5, 17.25, 270);
+    private final Pose point6Control1 = poseFactory.of(95.4, 29.4, 0);
+    private final Pose point7 = poseFactory.of(94.5, 9, 270);
+    private final Pose point8 = poseFactory.of(94.6, 17.4, 270);
+    private final Pose point9 = poseFactory.of(97.5, 34.5, 130);
+    private final Pose point10 = poseFactory.of(131.2, 26.7, 0);
 
     // Autonomous routine
     public Command autoRoutine() {
