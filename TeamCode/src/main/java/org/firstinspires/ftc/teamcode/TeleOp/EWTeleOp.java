@@ -1,22 +1,19 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.TeleOp;
 
-import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @TeleOp(name = "EW TeleOp", group = "Main")
 public class EWTeleOp extends LinearOpMode {
@@ -25,9 +22,10 @@ public class EWTeleOp extends LinearOpMode {
     private DcMotor leftFront, leftRear, rightFront, rightRear, intake, integration;
     private DcMotorEx shooter;
     private CRServo leftCR, rightCR;
+    private Servo leftDolphin, rightDolphin;
 
     // --- Sensors ---
-    private IMU imu;
+    private GoBildaPinpointDriver pinpoint;
     // --- Helper Classes ---
     private Movement movement;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
@@ -38,7 +36,7 @@ public class EWTeleOp extends LinearOpMode {
         initHardware();
 
         // --- Initialize helpers ---
-        movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, imu, telemetry);
+        movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint, telemetry);
 
         telemetry.addLine("Initialized. Press PLAY to start.");
         telemetry.update();
@@ -50,13 +48,13 @@ public class EWTeleOp extends LinearOpMode {
         while (opModeIsActive()) {
 
             shooter.setVelocity(1350);
+            pinpoint.update ();
 
-//             --- Intake ---
-            if (gamepad1.left_bumper){
-                intake.setPower(-1);
-            }else {
-                intake.setPower(1);
+            if (gamepad1.b) {
+                resetHeading ();
             }
+//             --- Intake ---
+            intake.setPower(1);
 
             if (gamepad1.dpad_up){
                 intake.setPower(0);
@@ -67,12 +65,19 @@ public class EWTeleOp extends LinearOpMode {
 
             if (gamepad1.right_trigger > 0.5){
                 shoot();
-                telemetry.addLine("Shooting");
+                //telemetry.addLine("Shooting");
             }
             else{
                 leftCR.setPower(0);
                 rightCR.setPower(0);
                 integration.setPower(0);
+            }
+            if (gamepad1.right_bumper) {
+                lowerDolphin();
+            }
+
+            if (gamepad1.left_bumper){
+                liftDolphin();
             }
 
             // --- Telemetry ---
@@ -80,6 +85,8 @@ public class EWTeleOp extends LinearOpMode {
 //            telemetry.addData("Shooter Power", shooter.getPower());
 //            telemetry.update();
             //telemetry.addData("ShooterVelocity", shooter.getVelocity());
+            telemetry.addData ( "pinpoint heading: ", pinpoint.getHeading ( AngleUnit.DEGREES ) );
+            telemetry.update ();
         }
     }
 
@@ -97,6 +104,11 @@ public class EWTeleOp extends LinearOpMode {
         leftCR = hardwareMap.get(CRServo.class, "leftCR");
         rightCR = hardwareMap.get(CRServo.class, "rightCR");
 
+
+        leftDolphin = hardwareMap.get(Servo.class, "leftDolphin");
+        rightDolphin = hardwareMap.get(Servo.class, "rightDolphin");
+        leftDolphin.setDirection(Servo.Direction.REVERSE);
+
         shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
 
         leftFront.setDirection(DcMotor.Direction.REVERSE);
@@ -106,15 +118,13 @@ public class EWTeleOp extends LinearOpMode {
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Sensors
-        imu = hardwareMap.get(IMU.class, "imu");
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
-        IMU.Parameters parameters = new IMU.Parameters(
-                new RevHubOrientationOnRobot(
-                        RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
-                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
-                )
-        );
-        imu.initialize(parameters);
+        pinpoint.setOffsets ( -7.0, -5.625, DistanceUnit.INCH );
+        pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.FORWARD,
+                GoBildaPinpointDriver.EncoderDirection.FORWARD );
+        pinpoint.setEncoderResolution ( GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD );
+        pinpoint.resetPosAndIMU ();
 
         for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -122,12 +132,23 @@ public class EWTeleOp extends LinearOpMode {
 
         runtime.reset();
     }
-
+    public void lowerDolphin(){
+        leftDolphin.setPosition(0.535);
+        rightDolphin.setPosition(0.8);
+    }
+    public void liftDolphin(){
+        leftDolphin.setPosition(0.15);
+        rightDolphin.setPosition(0.25);
+    }
     // --- Shooting method ---
     public void shoot() {
         leftCR.setPower(-1);
         rightCR.setPower(1);
         integration.setPower(1);
+    }
+
+    public void resetHeading() {
+        pinpoint.resetPosAndIMU ();
     }
 }
 
