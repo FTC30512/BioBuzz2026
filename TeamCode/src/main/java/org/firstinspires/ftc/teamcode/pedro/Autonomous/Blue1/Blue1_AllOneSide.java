@@ -103,10 +103,22 @@ public class Blue1_AllOneSide extends LinearOpMode {
         follower.setPose(start);
         follower.update();
 
+        leftCR = hardwareMap.get(CRServo.class, "leftCR");
+        rightCR = hardwareMap.get(CRServo.class, "rightCR");
+        intake = hardwareMap.get(DcMotor.class, "Intake");
+        shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
+        integration = hardwareMap.get(DcMotor.class, "Integration");
+
+
+
         waitForStart();
         schedule(autoRoutine());
 
         while (opModeIsActive()) {
+
+            intake.setPower(-1);
+            shooter.setVelocity(SHOOTER_VELOCITY);
+
             follower.update();
             Scheduler.execute();
 
