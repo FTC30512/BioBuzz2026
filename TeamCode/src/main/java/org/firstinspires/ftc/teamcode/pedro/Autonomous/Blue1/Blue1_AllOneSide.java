@@ -9,10 +9,15 @@ import com.pedropathing.paths.Path;
 import com.pedropathing.ivy.Command;
 import com.pedropathing.ivy.Scheduler;
 import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.commands.Commands.instant;
+import static com.pedropathing.ivy.commands.Commands.waitMs;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
@@ -20,6 +25,14 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 public class Blue1_AllOneSide extends LinearOpMode {
 
     private Follower follower;
+
+    private DcMotor intake, integration;
+    private DcMotorEx shooter;
+    private CRServo leftCR, rightCR;
+
+    private static final double SHOOTER_VELOCITY = 1350;
+    private final double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
+    private static final long SHOOT_TIME_MS = 2000;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
@@ -36,14 +49,49 @@ public class Blue1_AllOneSide extends LinearOpMode {
     private final Pose parkControl1 = poseFactory.of(132.4007, 93.0769, 0);
 
     // Autonomous routine
+    private void startFeed() {
+        leftCR.setPower(-1);
+        rightCR.setPower(1);
+        integration.setPower(1);
+    }
+
+    private void stopFeed() {
+        leftCR.setPower(0);
+        rightCR.setPower(0);
+        integration.setPower(0);
+    }
+
+    // Feed balls for SHOOT_TIME_MS, then stop
+    private Command shootSequence() {
+        return sequential(
+                instant(this::startFeed),
+                waitMs(SHOOT_TIME_MS),
+                instant(this::stopFeed)
+        );
+    }
     public Command autoRoutine() {
         return sequential(
                 follow(follower, shoot1()),
+                // Shoot at shoot 1 position
+                instant(this::startFeed),
+                waitMs(SHOOT_TIME_MS),
+                instant(this::stopFeed),
+                // End  Shoot routine and go to Garden Part1
                 follow(follower, collectGardenPart1()),
                 follow(follower, collectGardenPart2()),
                 follow(follower, shoot2()),
+                // Shoot at shoot 1 position
+                instant(this::startFeed),
+                waitMs(SHOOT_TIME_MS),
+                instant(this::stopFeed),
+                // End  Shoot routine and go to Flower
                 follow(follower, collectFlower()),
                 follow(follower, shoot3()),
+                // Shoot at shoot 1 position
+                instant(this::startFeed),
+                waitMs(SHOOT_TIME_MS),
+                instant(this::stopFeed),
+                // End  Shoot routine and go to Park
                 follow(follower, park())
         );
     }
