@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 
@@ -26,6 +27,7 @@ public class EWTeleOp extends LinearOpMode {
     private DcMotor leftFront, leftRear, rightFront, rightRear, intake, integration;
     private DcMotorEx shooter;
     private CRServo leftCR, rightCR;
+    private Servo leftDolphin, rightDolphin;
 
     // --- Sensors ---
     private GoBildaPinpointDriver pinpoint;
@@ -57,11 +59,7 @@ public class EWTeleOp extends LinearOpMode {
                 resetHeading ();
             }
 //             --- Intake ---
-            if (gamepad1.left_bumper){
-                intake.setPower(-1);
-            }else {
-                intake.setPower(1);
-            }
+            intake.setPower(1);
 
             if (gamepad1.dpad_up){
                 intake.setPower(0);
@@ -78,6 +76,13 @@ public class EWTeleOp extends LinearOpMode {
                 leftCR.setPower(0);
                 rightCR.setPower(0);
                 integration.setPower(0);
+            }
+            if (gamepad1.right_bumper) {
+                lowerDolphin();
+            }
+
+            if (gamepad1.left_bumper){
+                liftDolphin();
             }
 
             // --- Telemetry ---
@@ -127,7 +132,14 @@ public class EWTeleOp extends LinearOpMode {
 
         runtime.reset();
     }
-
+    public void lowerDolphin(){
+        leftDolphin.setPosition(0.535);
+        rightDolphin.setPosition(0.8);
+    }
+    public void liftDolphin(){
+        leftDolphin.setPosition(0.15);
+        rightDolphin.setPosition(0.25);
+    }
     // --- Shooting method ---
     public void shoot() {
         leftCR.setPower(-1);

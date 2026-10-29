@@ -18,6 +18,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
@@ -30,21 +32,23 @@ public class Blue1_AllOneSide extends LinearOpMode {
     private DcMotorEx shooter;
     private CRServo leftCR, rightCR;
 
+    private Servo leftDolphin, rightDolphin;
+
     private static final double SHOOTER_VELOCITY = 1350;
     private final double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
-    private static final long SHOOT_TIME_MS = 2000;
+    private static final long SHOOT_TIME_MS = 3000;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose start = poseFactory.of(85, 132, 270);
-    private final Pose shoot1 = poseFactory.of(85, 107, 270);
+    private final Pose shoot1 = poseFactory.of(85, 123, 270);
     private final Pose collectGardenPart1 = poseFactory.of(119.3584, 133, 0);
     private final Pose collectGardenPart1Control1 = poseFactory.of(98.2245, 124.082, 0);
     private final Pose collectGardenPart2 = poseFactory.of(132.6304, 133.0665, 0);
-    private final Pose shoot2 = poseFactory.of(84.6459, 107.4188, 270);
+    private final Pose shoot2 = poseFactory.of(85, 123, 270);
     private final Pose shoot2Control1 = poseFactory.of(97.8903, 125.0242, 0);
-    private final Pose collectFlower = poseFactory.of(128, 94.5, 0);
-    private final Pose shoot3 = poseFactory.of(84.9223, 107.5959, 270);
+    private final Pose collectFlower = poseFactory.of(129, 94.5, 0);
+    private final Pose shoot3 = poseFactory.of(85, 123, 270);
     private final Pose park = poseFactory.of(132.2288, 44.9007, 180);
     private final Pose parkControl1 = poseFactory.of(132.4007, 93.0769, 0);
 
@@ -59,6 +63,15 @@ public class Blue1_AllOneSide extends LinearOpMode {
         leftCR.setPower(0);
         rightCR.setPower(0);
         integration.setPower(0);
+    }
+
+    private void lowerDolphin(){
+        leftDolphin.setPosition(0.535);
+        rightDolphin.setPosition(0.8);
+    }
+    private void liftDolphin(){
+        leftDolphin.setPosition(0.15);
+        rightDolphin.setPosition(0.25);
     }
 
     // Feed balls for SHOOT_TIME_MS, then stop
@@ -84,9 +97,12 @@ public class Blue1_AllOneSide extends LinearOpMode {
                 instant(this::startFeed),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::stopFeed),
+                instant(this::lowerDolphin),
                 // End  Shoot routine and go to Flower
                 follow(follower, collectFlower()),
+                waitMs(2000),
                 follow(follower, shoot3()),
+                instant(this::liftDolphin),
                 // Shoot at shoot 1 position
                 instant(this::startFeed),
                 waitMs(SHOOT_TIME_MS),
@@ -105,8 +121,13 @@ public class Blue1_AllOneSide extends LinearOpMode {
 
         leftCR = hardwareMap.get(CRServo.class, "leftCR");
         rightCR = hardwareMap.get(CRServo.class, "rightCR");
+        leftDolphin = hardwareMap.get(Servo.class, "leftDolphin");
+        rightDolphin = hardwareMap.get(Servo.class, "rightDolphin");
+        leftDolphin.setDirection(Servo.Direction.REVERSE);
         intake = hardwareMap.get(DcMotor.class, "Intake");
         shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
+        shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
+        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
         integration = hardwareMap.get(DcMotor.class, "Integration");
 
 
