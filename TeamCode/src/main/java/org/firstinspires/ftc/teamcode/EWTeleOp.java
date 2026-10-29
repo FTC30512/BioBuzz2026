@@ -36,11 +36,16 @@ public class EWTeleOp extends LinearOpMode {
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private boolean is_lowered = false;
 
+    // 1. ADD THIS TRACKING VARIABLE HERE:
+    private boolean lastLeftBumper = false;
+
     @Override
     public void runOpMode() {
 
         // --- Initialize hardware ---
         initHardware();
+
+        liftDolphin();
 
         // --- Initialize helpers ---
         movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint, telemetry);
@@ -61,7 +66,12 @@ public class EWTeleOp extends LinearOpMode {
                 resetHeading ();
             }
 //             --- Intake ---
-            intake.setPower(1);
+            if (gamepad1.y)
+            {
+                intake.setPower ( -1 );
+            }else{
+                intake.setPower(1);
+            }
 
             if (gamepad1.dpad_up){
                 intake.setPower(0);
@@ -72,7 +82,6 @@ public class EWTeleOp extends LinearOpMode {
 
             if (gamepad1.right_trigger > 0.5){
                 shoot();
-                //telemetry.addLine("Shooting");
             }
             else{
                 leftCR.setPower(0);
@@ -80,26 +89,19 @@ public class EWTeleOp extends LinearOpMode {
                 integration.setPower(0);
             }
 
-            if (gamepad1.left_bumper){
+            // 2. REPLACE YOUR OLD left_bumper CHECK WITH THIS:
+            boolean currentLeftBumper = gamepad1.left_bumper;
+            if (currentLeftBumper && !lastLeftBumper) {
                 if (is_lowered) {
-                    liftDolphin ();
-                }
-                else
-                {
-                    lowerDolphin ();
+                    liftDolphin();
+                } else {
+                    lowerDolphin();
                 }
             }
+            lastLeftBumper = currentLeftBumper; // Save state for the next loop iteration
 
-            if (gamepad1.yWasPressed ())
-            {
-                intake.setPower ( -1 );
-            }
 
             // --- Telemetry ---
-//            telemetry.addData("Shooter Servo Position", shooterServo.getPosition());
-//            telemetry.addData("Shooter Power", shooter.getPower());
-//            telemetry.update();
-            //telemetry.addData("ShooterVelocity", shooter.getVelocity());
             telemetry.addData ( "pinpoint heading: ", pinpoint.getHeading ( AngleUnit.DEGREES ) );
             telemetry.update ();
         }
@@ -119,6 +121,11 @@ public class EWTeleOp extends LinearOpMode {
         leftCR = hardwareMap.get(CRServo.class, "leftCR");
         rightCR = hardwareMap.get(CRServo.class, "rightCR");
 
+        leftDolphin = hardwareMap.get(Servo.class, "leftDolphin");
+        rightDolphin = hardwareMap.get(Servo.class, "rightDolphin");
+        leftDolphin.setDirection(Servo.Direction.REVERSE);
+
+
         shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
 
         leftFront.setDirection(DcMotor.Direction.REVERSE);
@@ -132,7 +139,7 @@ public class EWTeleOp extends LinearOpMode {
 
         pinpoint.setOffsets ( -7.0, -5.625, DistanceUnit.INCH );
         pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                GoBildaPinpointDriver.EncoderDirection.REVERSED );
+                GoBildaPinpointDriver.EncoderDirection.FORWARD );
         pinpoint.setEncoderResolution ( GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD );
         pinpoint.resetPosAndIMU ();
 
@@ -144,12 +151,12 @@ public class EWTeleOp extends LinearOpMode {
     }
     public void lowerDolphin(){
         leftDolphin.setPosition(0.535);
-        rightDolphin.setPosition(0.8);
+        rightDolphin.setPosition(0.55);
         is_lowered = true;
     }
     public void liftDolphin(){
-        leftDolphin.setPosition(0.15);
-        rightDolphin.setPosition(0.25);
+        leftDolphin.setPosition(0.1);
+        rightDolphin.setPosition(0.1);
         is_lowered = false;
     }
     // --- Shooting method ---
@@ -163,5 +170,3 @@ public class EWTeleOp extends LinearOpMode {
         pinpoint.resetPosAndIMU ();
     }
 }
-
-//test
