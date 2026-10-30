@@ -59,7 +59,7 @@ public class EWTeleOp extends LinearOpMode {
         // --- Main loop ---
         while (opModeIsActive()) {
 
-            shooter.setVelocity(1350);
+            shooter.setVelocity(1375);
             pinpoint.update ();
 
             if (gamepad1.b) {
