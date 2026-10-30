@@ -2,12 +2,14 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
@@ -38,9 +40,12 @@ public class EWTeleOp extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-
         // --- Initialize hardware ---
         initHardware();
+        Limelight3A limelight = hardwareMap.get ( Limelight3A.class, "limelight" );
+        limelight.pipelineSwitch(1);
+        limelight.start();
+
 
         // --- Initialize helpers ---
         movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint, telemetry);
@@ -132,7 +137,7 @@ public class EWTeleOp extends LinearOpMode {
 
         pinpoint.setOffsets ( -7.0, -5.625, DistanceUnit.INCH );
         pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                GoBildaPinpointDriver.EncoderDirection.REVERSED );
+                GoBildaPinpointDriver.EncoderDirection.FORWARD );
         pinpoint.setEncoderResolution ( GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD );
         pinpoint.resetPosAndIMU ();
 
@@ -142,6 +147,50 @@ public class EWTeleOp extends LinearOpMode {
 
         runtime.reset();
     }
+    private double getHeading() {
+        double angle = getRawHeading();
+        if (angle > 180) angle -= 360;
+        if (angle < -180) angle += 360;
+        return angle;
+    }
+
+    private double getRawHeading() {
+        return pinpoint.getHeading ( AngleUnit.DEGREES );
+    }
+
+    public void pid_turn_by_gyro(double targetYaw, double speed){
+        targetYaw=-targetYaw;
+        double currentYaw = getHeading();
+        double error;
+        double actYaw = getHeading() + targetYaw;
+        double kp = 0.02;
+        while(Math.abs(actYaw - getHeading()) > 0.5){
+
+            error = kp * (actYaw - getHeading());
+            double power;
+            if(error > 0)
+                power = Math.min(Math.max(error, 0.15), speed);
+            else
+                power = Math.min(Math.max(error, -speed), -0.15);
+
+            telemetry.addLine("Current Heading angle" + getHeading());
+            telemetry.addLine( "Target Angle" + targetYaw);
+            telemetry.addLine("Actual Target Yaw" + actYaw);
+            telemetry.addLine("Actual Power " + power);
+            telemetry.update();
+            setDrivePower(-power, -power, power, power );
+        }
+        setDrivePower(0,0,0,0 );
+
+    }
+    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
+    {
+        leftFront.setPower(lfPower);
+        leftRear.setPower(lrPower);
+        rightFront.setPower(rfPower);
+        rightRear.setPower(rrPower);
+    }
+
     public void lowerDolphin(){
         leftDolphin.setPosition(0.535);
         rightDolphin.setPosition(0.8);
@@ -163,5 +212,3 @@ public class EWTeleOp extends LinearOpMode {
         pinpoint.resetPosAndIMU ();
     }
 }
-
-//test
