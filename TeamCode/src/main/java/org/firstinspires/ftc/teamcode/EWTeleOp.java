@@ -1,3 +1,10 @@
+//Controls:
+// gamepad1.b = resetYaw/resetHeading
+// gamepad1.y = reverse intake
+// gamepad1.dpad_up = turn off intake
+// gamepad1.right_trigger = shoot
+// gamepad1.left_bumper = lower/lift dolphin flap (toggle)
+
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
