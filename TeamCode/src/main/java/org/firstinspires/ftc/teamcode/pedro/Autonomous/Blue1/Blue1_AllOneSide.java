@@ -28,6 +28,8 @@ public class Blue1_AllOneSide extends LinearOpMode {
 
     private Follower follower;
 
+    private boolean is_lowered = false;
+
     private DcMotor intake, integration;
     private DcMotorEx shooter;
     private CRServo leftCR, rightCR;

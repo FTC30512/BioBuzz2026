@@ -36,8 +36,12 @@ public class EWTeleOp extends LinearOpMode {
     private CRServo leftCR, rightCR;
     private Servo leftDolphin, rightDolphin;
 
-    // --- Sensors ---
     private GoBildaPinpointDriver pinpoint;
+    Limelight3A limelight;
+    private LLResult llResult;
+    private boolean isTurning = false;
+    private double actYaw = 0;
+    private double maxTurnSpeed = 0.5;
     // --- Helper Classes ---
     private Movement movement;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
@@ -51,9 +55,7 @@ public class EWTeleOp extends LinearOpMode {
 
         // --- Initialize hardware ---
         initHardware();
-
         liftDolphin();
-
         // --- Initialize helpers ---
         movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint, telemetry);
 
@@ -88,6 +90,7 @@ public class EWTeleOp extends LinearOpMode {
             movement.drive( pinpoint.getHeading (AngleUnit.RADIANS) );
 
             if (gamepad1.right_trigger > 0.5){
+                isTurning = true;
                 shoot();
             }
             else{
@@ -108,7 +111,30 @@ public class EWTeleOp extends LinearOpMode {
             lastLeftBumper = currentLeftBumper; // Save state for the next loop iteration
 
 
+            double currentHeading = getHeading();
+            limelight.updateRobotOrientation(getRawHeading());
+            llResult = limelight.getLatestResult();
+            if (llResult != null && llResult.isValid()){
+                telemetry.addData("Tx", llResult.getTx());
+                telemetry.addData("Ty", llResult.getTy());
+                telemetry.addData("Ta", llResult.getTa());
+                telemetry.addLine("Current Heading angle" + getHeading());
+                telemetry.addLine("pinpoint angle" + pinpoint.getHeading(AngleUnit.DEGREES));
+
+                telemetry.update();
+            }
+            // Start the turn when X is pressed and a target is visible
+            if (gamepad1.x && llResult != null && llResult.isValid() && !isTurning) {
+                double targetYaw = -(llResult.getTx() - 4.5);
+                actYaw = targetYaw;
+                isTurning = true;
+            }
             // --- Telemetry ---
+            telemetry.addData("Actual Yaw: ", actYaw);
+            telemetry.addData("Tx: ", llResult.getTx());
+            telemetry.addData("Valid: ", llResult.isValid());
+            telemetry.addData("Null: ", llResult!=null);
+            telemetry.addData("is turning: ", isTurning);
             telemetry.addData ( "pinpoint heading: ", pinpoint.getHeading ( AngleUnit.DEGREES ) );
             telemetry.update ();
         }
@@ -154,6 +180,10 @@ public class EWTeleOp extends LinearOpMode {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
 
+        limelight = hardwareMap.get ( Limelight3A.class, "limelight" );
+        limelight.pipelineSwitch(1);
+        limelight.start();
+
         runtime.reset();
     }
     public void lowerDolphin(){
@@ -168,11 +198,68 @@ public class EWTeleOp extends LinearOpMode {
     }
     // --- Shooting method ---
     public void shoot() {
-        leftCR.setPower(-1);
-        rightCR.setPower(1);
-        integration.setPower(1);
+        pid_turn_by_gyro(llResult.getTx() - 4.5);
+        if(!isTurning) {
+            leftCR.setPower(-1);
+            rightCR.setPower(1);
+            integration.setPower(1);
+        }
+        else{
+            leftCR.setPower(0);
+            rightCR.setPower(0);
+            integration.setPower(0);
+        }
+    }
+    private double getHeading() {
+        double angle = getRawHeading();
+        if (angle > 180) angle -= 360;
+        if (angle < -180) angle += 360;
+        return angle;
     }
 
+    private double getRawHeading() {
+        return pinpoint.getHeading ( AngleUnit.DEGREES );
+    }
+
+    public void pid_turn_by_gyro(double targetYaw){
+
+        if (isTurning) {
+            double error = -targetYaw;
+
+            if (Math.abs(error) > 1.5) {
+                double kp = 0.02;
+                double power = error * kp;
+
+                // Bound the power limits smoothly
+                if (power > 0) {
+                    power = Math.min(Math.max(power, 0.15), maxTurnSpeed);
+                } else {
+                    power = Math.min(Math.max(power, -maxTurnSpeed), -0.15);
+                }
+
+                telemetry.addData("Tx", llResult.getTx());
+                telemetry.addData("Ty", llResult.getTy());
+                telemetry.addData("Ta", llResult.getTa());
+                telemetry.addData("Target Angle", actYaw);
+                telemetry.addData("Actual Power", power);
+
+                // Uncomment this to make the wheels physically move:
+                setDrivePower(-power, -power, power, power);
+            } else {
+                // Target reached
+                setDrivePower(0, 0, 0, 0);
+                isTurning = false;
+            }
+        }
+
+    }
+    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
+    {
+        leftFront.setPower(lfPower);
+        leftRear.setPower(lrPower);
+        rightFront.setPower(rfPower);
+        rightRear.setPower(rrPower);
+    }
     public void resetHeading() {
         pinpoint.resetPosAndIMU ();
     }

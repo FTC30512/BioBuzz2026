@@ -27,7 +27,7 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 public class Blue2_AllOneSide extends LinearOpMode {
 
     private Follower follower;
-
+    private boolean is_lowered = false;
     private DcMotor intake, integration;
     private DcMotorEx shooter;
     private CRServo leftCR, rightCR;
@@ -84,7 +84,7 @@ public class Blue2_AllOneSide extends LinearOpMode {
                 // Shoot at shoot1 position
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
-                instant(this::dontshoot),
+                instant(this::dontShoot),
                 // Collect flower and shoot at shoot2 position
                 instant(this::lowerDolphin),
                 follow(follower, collectHomeFlower()),
@@ -143,22 +143,22 @@ public class Blue2_AllOneSide extends LinearOpMode {
     }
 
     public Path shoot1() {
-        return Paths.line(start, shoot1).linear(start, shoot1);
+        return line(start, shoot1).linear(start, shoot1);
     }
 
     public Path collectHomeFlower() {
-        return Paths.curve(collectHomeFlowerStart, collectHomeFlowerControl1, collectHomeFlower).linear(collectHomeFlowerStart, collectHomeFlower);
+        return curve(collectHomeFlowerStart, collectHomeFlowerControl1, collectHomeFlower).linear(collectHomeFlowerStart, collectHomeFlower);
     }
 
     public Path shoot2Part1() {
-        return Paths.line(shoot2Part1Start, shoot2Part1).linear(shoot2Part1Start, shoot2Part1);
+        return line(shoot2Part1Start, shoot2Part1).linear(shoot2Part1Start, shoot2Part1);
     }
 
     public Path shoot2Part2() {
-        return Paths.curve(shoot2Part2Start, shoot2Part2Control1, shoot2Part2).linear(shoot2Part2Start, shoot2Part2);
+        return curve(shoot2Part2Start, shoot2Part2Control1, shoot2Part2).linear(shoot2Part2Start, shoot2Part2);
     }
 
     public Path park() {
-        return Paths.line(parkStart, park).linear(parkStart, park);
+        return line(parkStart, park).linear(parkStart, park);
     }
 }
