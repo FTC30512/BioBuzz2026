@@ -22,6 +22,9 @@ public class LimelightTest extends LinearOpMode {
     private GoBildaPinpointDriver pinpoint;
     Limelight3A limelight;
     private LLResult llResult;
+    private boolean isTurning = false;
+    private double actYaw = 0;
+    private double maxTurnSpeed = 0.5;
     @Override
     public void runOpMode() throws InterruptedException {
         initHardware ();
@@ -29,19 +32,56 @@ public class LimelightTest extends LinearOpMode {
         while(opModeIsActive())
         {
             pinpoint.update ();
+            double currentHeading = getHeading();
             limelight.updateRobotOrientation(getRawHeading());
             llResult = limelight.getLatestResult();
             if (llResult != null && llResult.isValid()){
                 telemetry.addData("Tx", llResult.getTx());
                 telemetry.addData("Ty", llResult.getTy());
                 telemetry.addData("Ta", llResult.getTa());
+                telemetry.addLine("Current Heading angle" + getHeading());
+                telemetry.addLine("pinpoint angle" + pinpoint.getHeading(AngleUnit.DEGREES));
+
                 telemetry.update();
             }
-
-            if (gamepad1.x) {
-                pid_turn_by_gyro(llResult.getTx()-4.5, 0.5);
-                telemetry.addLine("Shooting");
+            // Start the turn when X is pressed and a target is visible
+            if (gamepad1.x && llResult != null && llResult.isValid() && !isTurning) {
+                double targetYaw = -(llResult.getTx() - 4.5);
+                actYaw = currentHeading + targetYaw;
+                isTurning = true;
             }
+
+            if (isTurning) {
+                double error = actYaw - currentHeading;
+
+                if (Math.abs(error) > 0.5) {
+                    double kp = 0.02;
+                    double power = error * kp;
+
+                    // Bound the power limits smoothly
+                    if (power > 0) {
+                        power = Math.min(Math.max(power, 0.15), maxTurnSpeed);
+                    } else {
+                        power = Math.min(Math.max(power, -maxTurnSpeed), -0.15);
+                    }
+
+                    telemetry.addData("Tx", llResult.getTx());
+                    telemetry.addData("Ty", llResult.getTy());
+                    telemetry.addData("Ta", llResult.getTa());
+                    telemetry.addData("Current Heading: ", currentHeading);
+                    telemetry.addData("Target Angle", actYaw);
+                    telemetry.addData("Actual Power", power);
+
+                    // Uncomment this to make the wheels physically move:
+                    setDrivePower(-power, -power, power, power);
+                } else {
+                    // Target reached
+                    setDrivePower(0, 0, 0, 0);
+                    isTurning = false;
+                }
+            }
+
+            telemetry.update();
 
         }
 
@@ -93,7 +133,7 @@ public class LimelightTest extends LinearOpMode {
         double actYaw = getHeading() + targetYaw;
         double kp = 0.02;
         while(Math.abs(actYaw - getHeading()) > 0.5){
-
+            sleep(100);
             error = kp * (actYaw - getHeading());
             double power;
             if(error > 0)
@@ -101,6 +141,9 @@ public class LimelightTest extends LinearOpMode {
             else
                 power = Math.min(Math.max(error, -speed), -0.15);
 
+            telemetry.addData("Tx", llResult.getTx());
+            telemetry.addData("Ty", llResult.getTy());
+            telemetry.addData("Ta", llResult.getTa());
             telemetry.addLine("Current Heading angle" + getHeading());
             telemetry.addLine( "Target Angle" + targetYaw);
             telemetry.addLine("Actual Target Yaw" + actYaw);
