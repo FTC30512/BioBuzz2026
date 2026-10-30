@@ -37,6 +37,7 @@ public class Blue1_AllOneSide extends LinearOpMode {
     private static final double SHOOTER_VELOCITY = 1350;
     private final double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private static final long SHOOT_TIME_MS = 3000;
+    private static final long COLLECT_FLOWER_TIME_MS = 2000;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
@@ -52,61 +53,55 @@ public class Blue1_AllOneSide extends LinearOpMode {
     private final Pose park = poseFactory.of(132.2288, 44.9007, 180);
     private final Pose parkControl1 = poseFactory.of(132.4007, 93.0769, 0);
 
-    // Autonomous routine
-    private void startFeed() {
-        leftCR.setPower(-1);
-        rightCR.setPower(1);
-        integration.setPower(1);
-    }
-
-    private void stopFeed() {
+    // Commands
+    private void dontShoot() {
         leftCR.setPower(0);
         rightCR.setPower(0);
         integration.setPower(0);
     }
 
-    private void lowerDolphin(){
+    public void lowerDolphin(){
         leftDolphin.setPosition(0.535);
-        rightDolphin.setPosition(0.8);
+        rightDolphin.setPosition(0.55);
+        is_lowered = true;
     }
-    private void liftDolphin(){
-        leftDolphin.setPosition(0.15);
-        rightDolphin.setPosition(0.25);
+    public void liftDolphin(){
+        leftDolphin.setPosition(0.1);
+        rightDolphin.setPosition(0.1);
+        is_lowered = false;
     }
-
-    // Feed balls for SHOOT_TIME_MS, then stop
-    private Command shootSequence() {
-        return sequential(
-                instant(this::startFeed),
-                waitMs(SHOOT_TIME_MS),
-                instant(this::stopFeed)
-        );
+    // --- Shooting method ---
+    public void shoot() {
+        leftCR.setPower(-1);
+        rightCR.setPower(1);
+        integration.setPower(1);
     }
+    // Autonomous Routine
     public Command autoRoutine() {
         return sequential(
                 follow(follower, shoot1()),
                 // Shoot at shoot 1 position
-                instant(this::startFeed),
+                instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
-                instant(this::stopFeed),
+                instant(this::dontShoot),
                 // End  Shoot routine and go to Garden Part1
                 follow(follower, collectGardenPart1()),
                 follow(follower, collectGardenPart2()),
                 follow(follower, shoot2()),
                 // Shoot at shoot 1 position
-                instant(this::startFeed),
+                instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
-                instant(this::stopFeed),
+                instant(this::dontShoot),
                 instant(this::lowerDolphin),
                 // End  Shoot routine and go to Flower
                 follow(follower, collectFlower()),
-                waitMs(2000),
+                waitMs(COLLECT_FLOWER_TIME_MS),
                 follow(follower, shoot3()),
                 instant(this::liftDolphin),
                 // Shoot at shoot 1 position
-                instant(this::startFeed),
+                instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
-                instant(this::stopFeed),
+                instant(this::dontShoot),
                 // End  Shoot routine and go to Park
                 follow(follower, park())
         );
@@ -129,8 +124,6 @@ public class Blue1_AllOneSide extends LinearOpMode {
         shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
         shooter.setDirection(DcMotorSimple.Direction.REVERSE);
         integration = hardwareMap.get(DcMotor.class, "Integration");
-
-
 
         waitForStart();
         schedule(autoRoutine());
