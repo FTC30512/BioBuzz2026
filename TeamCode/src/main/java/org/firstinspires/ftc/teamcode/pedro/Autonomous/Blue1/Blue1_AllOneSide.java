@@ -13,6 +13,7 @@ import static com.pedropathing.ivy.commands.Commands.instant;
 import static com.pedropathing.ivy.commands.Commands.waitMs;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -45,9 +46,9 @@ public class Blue1_AllOneSide extends LinearOpMode {
 
     private final Pose start = poseFactory.of(85, 132, 270);
     private final Pose shoot1 = poseFactory.of(85, 123, 270);
-    private final Pose collectGardenPart1 = poseFactory.of(119.3584, 133, 0);
+    private final Pose collectGardenPart1 = poseFactory.of(119.3584, 131, 0);
     private final Pose collectGardenPart1Control1 = poseFactory.of(98.2245, 124.082, 0);
-    private final Pose collectGardenPart2 = poseFactory.of(132.6304, 133.0665, 0);
+    private final Pose collectGardenPart2 = poseFactory.of(132, 131, 0);
     private final Pose shoot2 = poseFactory.of(85, 123, 270);
     private final Pose shoot2Control1 = poseFactory.of(97.8903, 125.0242, 0);
     private final Pose collectFlower = poseFactory.of(129, 94.5, 0);
@@ -81,6 +82,7 @@ public class Blue1_AllOneSide extends LinearOpMode {
     // Autonomous Routine
     public Command autoRoutine() {
         return sequential(
+                waitMs(1000),
                 follow(follower, shoot1()),
                 // Shoot at shoot 1 position
                 instant(this::shoot),

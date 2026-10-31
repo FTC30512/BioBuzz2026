@@ -1,7 +1,8 @@
-package org.firstinspires.ftc.teamcode.pedro.Autonomous.Blue2;
+package org.firstinspires.ftc.teamcode.pedro.Autonomous.BlueRed2;
 
 import static com.pedropathing.api.Paths.*;
 
+import com.pedropathing.api.Paths;
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
@@ -27,13 +28,14 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 public class Blue2_AllOneSide extends LinearOpMode {
 
     private Follower follower;
-    private boolean is_lowered = false;
+
     private DcMotor intake, integration;
     private DcMotorEx shooter;
     private CRServo leftCR, rightCR;
 
     private Servo leftDolphin, rightDolphin;
 
+    boolean is_lowered = false;
     private static final double SHOOTER_VELOCITY = 1350;
     private final double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private static final long SHOOT_TIME_MS = 3000;
@@ -41,18 +43,18 @@ public class Blue2_AllOneSide extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees().mirrorY(70.75);
 
-    private final Pose start = poseFactory.of(81.5, 133, -90);
-    private final Pose shoot1 = poseFactory.of(83.5, 117, -90);
-    private final Pose collectHomeFlowerStart = poseFactory.of(83.5, 117, 90);
-    private final Pose collectHomeFlower = poseFactory.of(94.5, 126, 90);
-    private final Pose collectHomeFlowerControl1 = poseFactory.of(94.5, 117, 0);
-    private final Pose shoot2Part1Start = poseFactory.of(94.5, 126, 90);
-    private final Pose shoot2Part1 = poseFactory.of(94.5, 120, 90);
-    private final Pose shoot2Part2Start = poseFactory.of(94.5, 120, -90);
-    private final Pose shoot2Part2 = poseFactory.of(83.5, 117, -90);
-    private final Pose shoot2Part2Control1 = poseFactory.of(94.5, 117, 0);
-    private final Pose parkStart = poseFactory.of(83.5, 117, -90);
-    private final Pose park = poseFactory.of(130.5, 117, 180);
+    private final Pose start = poseFactory.of(60, 133, 270);
+    private final Pose shoot1 = poseFactory.of(58, 123, 270);
+    private final Pose collectHomeFlowerPart1Start = poseFactory.of(58, 123, 90);
+    private final Pose collectHomeFlowerPart1 = poseFactory.of(46.5, 120, 90);
+    private final Pose collectHomeFlowerPart2Start = poseFactory.of(46.5, 120, 90);
+    private final Pose collectHomeFlowerPart2 = poseFactory.of(46.5, 130, 90);
+    private final Pose shoot2Part1Start = poseFactory.of(46.5, 130, 90);
+    private final Pose shoot2Part1 = poseFactory.of(46.5, 120, 90);
+    private final Pose shoot2Part2Start = poseFactory.of(46.5, 120, 270);
+    private final Pose shoot2Part2 = poseFactory.of(58, 123, 270);
+    private final Pose parkStart = poseFactory.of(58, 123, 270);
+    private final Pose park = poseFactory.of(11, 118, 0);
 
     // Commands
     private void dontShoot() {
@@ -80,14 +82,15 @@ public class Blue2_AllOneSide extends LinearOpMode {
     // Autonomous Routine
     public Command autoRoutine() {
         return sequential(
+                waitMs(500),
                 follow(follower, shoot1()),
-                // Shoot at shoot1 position
+                //wait for hive to tip (Limelight AprilTag)
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
-                // Collect flower and shoot at shoot2 position
+                follow(follower, collectHomeFlowerPart1()),
                 instant(this::lowerDolphin),
-                follow(follower, collectHomeFlower()),
+                follow(follower, collectHomeFlowerPart2()),
                 waitMs(COLLECT_FLOWER_TIME_MS),
                 follow(follower, shoot2Part1()),
                 instant(this::liftDolphin),
@@ -95,7 +98,6 @@ public class Blue2_AllOneSide extends LinearOpMode {
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
-                // Park
                 follow(follower, park())
         );
     }
@@ -143,22 +145,26 @@ public class Blue2_AllOneSide extends LinearOpMode {
     }
 
     public Path shoot1() {
-        return line(start, shoot1).linear(start, shoot1);
+        return Paths.line(start, shoot1).linear(start, shoot1);
     }
 
-    public Path collectHomeFlower() {
-        return curve(collectHomeFlowerStart, collectHomeFlowerControl1, collectHomeFlower).linear(collectHomeFlowerStart, collectHomeFlower);
+    public Path collectHomeFlowerPart1() {
+        return Paths.line(collectHomeFlowerPart1Start, collectHomeFlowerPart1).linear(collectHomeFlowerPart1Start, collectHomeFlowerPart1);
+    }
+
+    public Path collectHomeFlowerPart2() {
+        return Paths.line(collectHomeFlowerPart2Start, collectHomeFlowerPart2).linear(collectHomeFlowerPart2Start, collectHomeFlowerPart2);
     }
 
     public Path shoot2Part1() {
-        return line(shoot2Part1Start, shoot2Part1).linear(shoot2Part1Start, shoot2Part1);
+        return Paths.line(shoot2Part1Start, shoot2Part1).linear(shoot2Part1Start, shoot2Part1);
     }
 
     public Path shoot2Part2() {
-        return curve(shoot2Part2Start, shoot2Part2Control1, shoot2Part2).linear(shoot2Part2Start, shoot2Part2);
+        return Paths.line(shoot2Part2Start, shoot2Part2).linear(shoot2Part2Start, shoot2Part2);
     }
 
     public Path park() {
-        return line(parkStart, park).linear(parkStart, park);
+        return Paths.line(parkStart, park).linear(parkStart, park);
     }
 }
