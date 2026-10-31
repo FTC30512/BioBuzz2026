@@ -24,7 +24,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
-@Autonomous(name = "Blue2_AllOneSide", group = "Blue2")
+//@Autonomous(name = "Blue2_AllOneSide", group = "Blue2")
 public class Blue2_AllOneSide extends LinearOpMode {
 
     private Follower follower;
@@ -41,7 +41,7 @@ public class Blue2_AllOneSide extends LinearOpMode {
     private static final long SHOOT_TIME_MS = 3000;
     private static final long COLLECT_FLOWER_TIME_MS = 2000;
 
-    private final PoseFactory poseFactory = PoseFactory.degrees().mirrorY(70.75);
+    private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose start = poseFactory.of(60, 133, 270);
     private final Pose shoot1 = poseFactory.of(58, 123, 270);
@@ -82,7 +82,7 @@ public class Blue2_AllOneSide extends LinearOpMode {
     // Autonomous Routine
     public Command autoRoutine() {
         return sequential(
-                waitMs(500),
+                waitMs(10000),
                 follow(follower, shoot1()),
                 //wait for hive to tip (Limelight AprilTag)
                 instant(this::shoot),

@@ -24,7 +24,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
-@Autonomous(name = "Blue1_AllOneSide", group = "Blue1")
+//@Autonomous(name = "Blue1_AllOneSide", group = "Blue1")
 public class Blue1_AllOneSide extends LinearOpMode {
 
     private Follower follower;

@@ -1,19 +1,20 @@
-package org.firstinspires.ftc.teamcode.pedro.Autonomous.BlueRed1;
+package org.firstinspires.ftc.teamcode.pedro.Autonomous.BlueRed2;
 
-import static com.pedropathing.api.Paths.*;
-
-import com.pedropathing.api.PoseFactory;
-import com.pedropathing.follower.Follower;
-import com.pedropathing.math.Pose;
-import com.pedropathing.paths.Path;
-import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.Scheduler;
+import static com.pedropathing.api.Paths.curve;
+import static com.pedropathing.api.Paths.line;
 import static com.pedropathing.ivy.Scheduler.schedule;
 import static com.pedropathing.ivy.commands.Commands.instant;
 import static com.pedropathing.ivy.commands.Commands.waitMs;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 
+import com.pedropathing.api.Paths;
+import com.pedropathing.api.PoseFactory;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.ivy.Command;
+import com.pedropathing.ivy.Scheduler;
+import com.pedropathing.math.Pose;
+import com.pedropathing.paths.Path;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -24,13 +25,13 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
-@Autonomous(name = "Blue1_HomeFlowerShootOtherSide", group = "Blue1")
-public class Blue1_HomeFlowerShootOtherSide extends LinearOpMode {
+@Autonomous(name = "Blue2 Version 2", group = "Blue2")
+public class Blue2_V2 extends LinearOpMode {
 
     private Follower follower;
 
-    boolean is_lowered = false;
-	
+    private boolean is_lowered = false;
+
     private DcMotor intake, integration;
     private DcMotorEx shooter;
     private CRServo leftCR, rightCR;
@@ -40,31 +41,18 @@ public class Blue1_HomeFlowerShootOtherSide extends LinearOpMode {
     private static final double SHOOTER_VELOCITY = 1350;
     private final double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private static final long SHOOT_TIME_MS = 3000;
-    private static final long COLLECT_FLOWER_TIME_MS = 2000;
+    private static final long COLLECT_FLOWER_TIME_MS = 3000;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
-
-    private final Pose start = poseFactory.of(85, 132, 270);
-    private final Pose shoot1 = poseFactory.of(85, 123, 270);
-    private final Pose collectGardenPart1Start = poseFactory.of(84, 123, 270);
-    private final Pose collectGardenPart1 = poseFactory.of(119.35, 132, 0);
-    private final Pose collectGardenPart2Start = poseFactory.of(120, 132, 0);
-    private final Pose collectGardenPart2 = poseFactory.of(132, 132, 0);
-    private final Pose shoot2Start = poseFactory.of(132, 132, 0);
-    private final Pose shoot2 = poseFactory.of(85, 123, 270);
-    private final Pose collectFlowerPart1Start = poseFactory.of(84, 123, 270);
-    private final Pose collectFlowerPart1 = poseFactory.of(119, 94.5, 0);
-    private final Pose collectFlowerPart2Start = poseFactory.of(119, 94.5, 0);
-    private final Pose collectFlowerPart2 = poseFactory.of(127, 94.3417, 0);
-    private final Pose shoot3Part1 = poseFactory.of(119, 94.5, -0.9832);
-    private final Pose shoot3Part2Start = poseFactory.of(119, 94.5, 0);
-    private final Pose shoot3Part2 = poseFactory.of(118, 65, 90);
-    private final Pose shoot3Part3Start = poseFactory.of(118, 65, 90);
-    private final Pose shoot3Part3 = poseFactory.of(84, 18, 90);
-    private final Pose shoot3Part3Control1 = poseFactory.of(118, 30, 0);
-    private final Pose parkStart = poseFactory.of(84, 18, 90);
-    private final Pose park = poseFactory.of(131.1974, 45.4079, 180);
-    private final Pose parkControl1 = poseFactory.of(118, 30, 0);
+    private final Pose start = poseFactory.of(60, 133, 270);
+    private final Pose shoot1 = poseFactory.of(58, 123, 270);
+    private final Pose collectHomeFlowerPart1Start = poseFactory.of(58, 123, 90);
+    private final Pose collectHomeFlowerPart1 = poseFactory.of(48, 120, 90);
+    private final Pose collectHomeFlowerPart2 = poseFactory.of(48, 124.5, 90);
+    private final Pose shoot2Part1 = poseFactory.of(48, 118, 90);
+    private final Pose shoot2Part2Start = poseFactory.of(48, 118, 270);
+    private final Pose shoot2 = poseFactory.of(58, 123, 270);
+    private final Pose park = poseFactory.of(11, 118, 0);
 
     // Commands
     private void dontShoot() {
@@ -92,26 +80,20 @@ public class Blue1_HomeFlowerShootOtherSide extends LinearOpMode {
     // Autonomous Routine
     public Command autoRoutine() {
         return sequential(
-                waitMs(1000),
+                waitMs(10000),
                 follow(follower, shoot1()),
+                //wait for hive to tip (Limelight AprilTag)
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
-                follow(follower, collectGardenPart1()),
-                waitMs(250),
-                follow(follower, collectGardenPart2()),
-                follow(follower, shoot2()),
-                instant(this::shoot),
-                waitMs(SHOOT_TIME_MS),
-                instant(this::dontShoot),
-                follow(follower, collectFlowerPart1()),
+                follow(follower, collectHomeFlowerPart1()),
                 instant(this::lowerDolphin),
-                follow(follower, collectFlowerPart2()),
+                follow(follower, collectHomeFlowerPart2()),
                 waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, shoot3Part1()),
+                follow(follower, shoot2Part1()),
                 instant(this::liftDolphin),
-                follow(follower, shoot3Part2()),
-                follow(follower, shoot3Part3()),
+                waitMs(2000),
+                follow(follower, shoot2Part2()),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
@@ -165,39 +147,23 @@ public class Blue1_HomeFlowerShootOtherSide extends LinearOpMode {
         return Paths.line(start, shoot1).linear(start, shoot1);
     }
 
-    public Path collectGardenPart1() {
-        return Paths.line(collectGardenPart1Start, collectGardenPart1).linear(collectGardenPart1Start, collectGardenPart1);
+    public Path collectHomeFlowerPart1() {
+        return Paths.line(collectHomeFlowerPart1Start, collectHomeFlowerPart1).linear(collectHomeFlowerPart1Start, collectHomeFlowerPart1);
     }
 
-    public Path collectGardenPart2() {
-        return Paths.line(collectGardenPart2Start, collectGardenPart2).linear(collectGardenPart2Start, collectGardenPart2);
+    public Path collectHomeFlowerPart2() {
+        return Paths.line(collectHomeFlowerPart1, collectHomeFlowerPart2).linear(collectHomeFlowerPart1, collectHomeFlowerPart2);
     }
 
-    public Path shoot2() {
-        return Paths.line(shoot2Start, shoot2).linear(shoot2Start, shoot2);
+    public Path shoot2Part1() {
+        return Paths.line(collectHomeFlowerPart2, shoot2Part1).linear(collectHomeFlowerPart2, shoot2Part1);
     }
 
-    public Path collectFlowerPart1() {
-        return Paths.line(collectFlowerPart1Start, collectFlowerPart1).linear(collectFlowerPart1Start, collectFlowerPart1);
-    }
-
-    public Path collectFlowerPart2() {
-        return Paths.line(collectFlowerPart2Start, collectFlowerPart2).linear(collectFlowerPart2Start, collectFlowerPart2);
-    }
-
-    public Path shoot3Part1() {
-        return Paths.line(collectFlowerPart2, shoot3Part1).reverseTangent();
-    }
-
-    public Path shoot3Part2() {
-        return Paths.line(shoot3Part2Start, shoot3Part2).linear(shoot3Part2Start, shoot3Part2);
-    }
-
-    public Path shoot3Part3() {
-        return Paths.curve(shoot3Part3Start, shoot3Part3Control1, shoot3Part3).linear(shoot3Part3Start, shoot3Part3);
+    public Path shoot2Part2() {
+        return Paths.line(shoot2Part2Start, shoot2).linear(shoot2Part2Start, shoot2);
     }
 
     public Path park() {
-        return Paths.curve(parkStart, parkControl1, park).linear(parkStart, park);
+        return Paths.line(shoot2, park).linear(shoot2, park);
     }
 }
