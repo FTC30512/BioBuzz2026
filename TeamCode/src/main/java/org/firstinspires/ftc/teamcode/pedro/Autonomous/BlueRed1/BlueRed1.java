@@ -1,19 +1,19 @@
-package org.firstinspires.ftc.teamcode.pedro.Autonomous.Blue1;
+package org.firstinspires.ftc.teamcode.pedro.Autonomous.BlueRed1;
 
-import static com.pedropathing.api.Paths.*;
-
-import com.pedropathing.api.PoseFactory;
-import com.pedropathing.follower.Follower;
-import com.pedropathing.math.Pose;
-import com.pedropathing.paths.Path;
-import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.Scheduler;
+import static com.pedropathing.api.Paths.curve;
+import static com.pedropathing.api.Paths.line;
 import static com.pedropathing.ivy.Scheduler.schedule;
 import static com.pedropathing.ivy.commands.Commands.instant;
 import static com.pedropathing.ivy.commands.Commands.waitMs;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 
+import com.pedropathing.api.PoseFactory;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.ivy.Command;
+import com.pedropathing.ivy.Scheduler;
+import com.pedropathing.math.Pose;
+import com.pedropathing.paths.Path;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -24,8 +24,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
-//@Autonomous(name = "Blue1_AllOneSide", group = "Blue1")
-public class Blue1_AllOneSide extends LinearOpMode {
+@Autonomous(name = "Blue - Red 1", group = "Blue1")
+public class BlueRed1 extends LinearOpMode {
 
     private Follower follower;
 
@@ -40,7 +40,7 @@ public class Blue1_AllOneSide extends LinearOpMode {
     private static final double SHOOTER_VELOCITY = 1350;
     private final double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private static final long SHOOT_TIME_MS = 3000;
-    private static final long COLLECT_FLOWER_TIME_MS = 2000;
+    private static final long COLLECT_FLOWER_TIME_MS = 3000;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
@@ -51,10 +51,12 @@ public class Blue1_AllOneSide extends LinearOpMode {
     private final Pose collectGardenPart2 = poseFactory.of(132, 131, 0);
     private final Pose shoot2 = poseFactory.of(85, 123, 270);
     private final Pose shoot2Control1 = poseFactory.of(97.8903, 125.0242, 0);
-    private final Pose collectFlower = poseFactory.of(129, 94.5, 0);
-    private final Pose shoot3 = poseFactory.of(85, 123, 270);
+    private final Pose collectFlower = poseFactory.of(129, 90, 0);
+    private final Pose shoot3Part1 = poseFactory.of(119, 90, 0);
+    private final Pose shoot3Part2Control1 = poseFactory.of(127.2754, 21.3166, 0);
+    private final Pose shoot3 = poseFactory.of(85, 18.5, 90);
     private final Pose park = poseFactory.of(132.2288, 44.9007, 180);
-    private final Pose parkControl1 = poseFactory.of(132.4007, 93.0769, 0);
+    private final Pose park2 = poseFactory.of(132, 24, 180);
 
     // Commands
     private void dontShoot() {
@@ -82,6 +84,7 @@ public class Blue1_AllOneSide extends LinearOpMode {
     // Autonomous Routine
     public Command autoRoutine() {
         return sequential(
+                instant(this::liftDolphin),
                 waitMs(1000),
                 follow(follower, shoot1()),
                 // Shoot at shoot 1 position
@@ -91,6 +94,7 @@ public class Blue1_AllOneSide extends LinearOpMode {
                 // End  Shoot routine and go to Garden Part1
                 follow(follower, collectGardenPart1()),
                 follow(follower, collectGardenPart2()),
+                waitMs(1000),
                 follow(follower, shoot2()),
                 // Shoot at shoot 1 position
                 instant(this::shoot),
@@ -100,8 +104,9 @@ public class Blue1_AllOneSide extends LinearOpMode {
                 // End  Shoot routine and go to Flower
                 follow(follower, collectFlower()),
                 waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, shoot3()),
+                follow(follower, shoot3Part1()),
                 instant(this::liftDolphin),
+                follow(follower, shoot3()),
                 // Shoot at shoot 1 position
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
@@ -172,12 +177,18 @@ public class Blue1_AllOneSide extends LinearOpMode {
     public Path collectFlower() {
         return line(shoot2, collectFlower).linear(shoot2, collectFlower);
     }
-
-    public Path shoot3() {
-        return line(collectFlower, shoot3).linear(collectFlower, shoot3);
+    public Path shoot3Part1() {
+        return line(collectFlower, shoot3Part1).reverseTangent();
     }
 
+    public Path shoot3() {
+        return curve(shoot3Part1, shoot3Part2Control1, shoot3).linear(shoot3Part1, shoot3);
+    }
+
+    //public Path shoot3() {
+        //return line(collectFlower, shoot3).linear(collectFlower, shoot3);
+    //}
     public Path park() {
-        return curve(shoot3, parkControl1, park).linear(shoot3, park);
+        return line(shoot3, park).linear(shoot3, park);
     }
 }
