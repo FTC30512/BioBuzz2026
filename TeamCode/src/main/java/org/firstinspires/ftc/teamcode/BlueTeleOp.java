@@ -20,6 +20,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -45,6 +46,7 @@ public class BlueTeleOp extends LinearOpMode {
     private Movement movement;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private boolean is_lowered = false;
+
     private double tag_offset = 0;
 
     // 1. ADD THIS TRACKING VARIABLE HERE:
@@ -128,6 +130,10 @@ public class BlueTeleOp extends LinearOpMode {
 //            telemetry.addData("Null: ", llResult!=null);
 //            telemetry.addData("is turning: ", isTurning);
 //            telemetry.addData ( "pinpoint heading: ", pinpoint.getHeading ( AngleUnit.DEGREES ) );
+            telemetry.addData("Pinpoint pose (in, deg)", "%.1f, %.1f, %.1f",
+                    pinpoint.getPosX(DistanceUnit.INCH),
+                    pinpoint.getPosY(DistanceUnit.INCH),
+                    pinpoint.getHeading(AngleUnit.DEGREES));
 
             telemetry.update ();
 //            telemetry.addData("Pinpoint Heading: ", pinpoint.getHeading(AngleUnit.DEGREES));
@@ -171,6 +177,8 @@ public class BlueTeleOp extends LinearOpMode {
                 GoBildaPinpointDriver.EncoderDirection.FORWARD );
         pinpoint.setEncoderResolution ( GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD );
         pinpoint.resetPosAndIMU ();
+        sleep(300); // let the IMU recalibrate while the robot sits still
+        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 56, 8, AngleUnit.DEGREES, 0)); // TUNE x, y
 
         // Sensors
 
