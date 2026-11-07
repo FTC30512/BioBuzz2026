@@ -48,6 +48,10 @@ public class BlueTeleOp extends LinearOpMode {
     private boolean is_lowered = false;
 
     private double tag_offset = 0;
+    // blue 1 target cell
+    private static final double BLUE1_X = 84;
+    private static final double BLUE1_Y = 84;
+    private double distanceToBlue1 = 0;
 
     // 1. ADD THIS TRACKING VARIABLE HERE:
     private boolean lastLeftBumper = false;
@@ -57,12 +61,13 @@ public class BlueTeleOp extends LinearOpMode {
 
         // --- Initialize hardware ---
         initHardware();
-        liftDolphin();
+        //liftDolphin();
         // --- Initialize helpers ---
         movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint, telemetry);
 
         telemetry.addLine("Initialized. Press PLAY to start.");
         telemetry.update();
+
         gamepad1.rumble(500);
 
         waitForStart();
@@ -72,6 +77,7 @@ public class BlueTeleOp extends LinearOpMode {
 
             shooter.setVelocity(1350);
             pinpoint.update ();
+            distanceToBlue1 = calcDistanceToBlue1();
 
             if (gamepad1.b) {
                 resetHeading ();
@@ -91,8 +97,8 @@ public class BlueTeleOp extends LinearOpMode {
             // --- Driving ---
             movement.drive( pinpoint.getHeading (AngleUnit.RADIANS) );
 
-            if (gamepad1.right_trigger > 0.5){
-                isTurning = true;
+           if (gamepad1.right_trigger > 0.5){
+               isTurning = true;
                 shoot();
             }
             else{
@@ -103,13 +109,13 @@ public class BlueTeleOp extends LinearOpMode {
 
             // 2. REPLACE YOUR OLD left_bumper CHECK WITH THIS:
             boolean currentLeftBumper = gamepad1.left_bumper;
-            if (currentLeftBumper && !lastLeftBumper) {
-                if (is_lowered) {
-                    liftDolphin();
-                } else {
-                    lowerDolphin();
-                }
-            }
+//            if (currentLeftBumper && !lastLeftBumper) {
+//                if (is_lowered) {
+//                    liftDolphin();
+//                } else {
+//                    lowerDolphin();
+//                }
+//            }
             lastLeftBumper = currentLeftBumper; // Save state for the next loop iteration
             double currentHeading = getHeading();
             limelight.updateRobotOrientation(getRawHeading());
@@ -120,8 +126,6 @@ public class BlueTeleOp extends LinearOpMode {
                 telemetry.addData("Ta", llResult.getTa());
                 telemetry.addLine("Current Heading angle" + getHeading());
                 telemetry.addLine("pinpoint angle" + pinpoint.getHeading(AngleUnit.DEGREES));
-
-                telemetry.update();
             }
             // --- Telemetry ---
 //            telemetry.addData("Actual Yaw: ", actYaw);
@@ -134,6 +138,7 @@ public class BlueTeleOp extends LinearOpMode {
                     pinpoint.getPosX(DistanceUnit.INCH),
                     pinpoint.getPosY(DistanceUnit.INCH),
                     pinpoint.getHeading(AngleUnit.DEGREES));
+            telemetry.addData("Distance to Blue1","%.1f", distanceToBlue1);
 
             telemetry.update ();
 //            telemetry.addData("Pinpoint Heading: ", pinpoint.getHeading(AngleUnit.DEGREES));
@@ -156,29 +161,32 @@ public class BlueTeleOp extends LinearOpMode {
         leftCR = hardwareMap.get(CRServo.class, "leftCR");
         rightCR = hardwareMap.get(CRServo.class, "rightCR");
 
-        leftDolphin = hardwareMap.get(Servo.class, "leftDolphin");
-        rightDolphin = hardwareMap.get(Servo.class, "rightDolphin");
-        leftDolphin.setDirection(Servo.Direction.REVERSE);
+        //leftDolphin = hardwareMap.get(Servo.class, "leftDolphin");
+        //rightDolphin = hardwareMap.get(Servo.class, "rightDolphin");
+        //leftDolphin.setDirection(Servo.Direction.REVERSE);
 
 
         shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
 
         leftFront.setDirection(DcMotor.Direction.REVERSE);
         leftRear.setDirection(DcMotor.Direction.REVERSE);
-        rightRear.setDirection(DcMotor.Direction.REVERSE);
+        //rightRear.setDirection(DcMotor.Direction.REVERSE);
         shooter.setDirection(DcMotorSimple.Direction.REVERSE);
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Sensors
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-
-        pinpoint.setOffsets ( -7.0, -5.625, DistanceUnit.INCH );
-        pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                GoBildaPinpointDriver.EncoderDirection.FORWARD );
+//
+//        pinpoint.setOffsets ( -7.0, -5.625, DistanceUnit.INCH );
+//        pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.FORWARD,
+//                GoBildaPinpointDriver.EncoderDirection.FORWARD );
+        pinpoint.setOffsets ( -5.25, 5.25, DistanceUnit.INCH );
+       pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.REVERSED,
+                GoBildaPinpointDriver.EncoderDirection.REVERSED );
         pinpoint.setEncoderResolution ( GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD );
         pinpoint.resetPosAndIMU ();
         sleep(300); // let the IMU recalibrate while the robot sits still
-        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 56, 8, AngleUnit.DEGREES, 0)); // TUNE x, y
+        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 132, 24, AngleUnit.DEGREES, 180)); // TUNE x, y
 
         // Sensors
 
@@ -239,6 +247,11 @@ public class BlueTeleOp extends LinearOpMode {
         if (angle > 180) angle -= 360;
         if (angle < -180) angle += 360;
         return angle;
+    }
+    private double calcDistanceToBlue1() {
+        double dx = BLUE1_X - pinpoint.getPosX(DistanceUnit.INCH);
+        double dy = BLUE1_Y - pinpoint.getPosY(DistanceUnit.INCH);
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
     private double getRawHeading() {
