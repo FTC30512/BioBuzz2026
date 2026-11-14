@@ -51,6 +51,7 @@ public class TestDetectionOnOldRobot extends LinearOpMode {
     private static final long SHOOT_TIME_MS = 2000;
     private static final long COLLECT_FLOWER_TIME_MS = 3000;
     private static final long LOWER_DOLPHIN_TIME_MS = 1000;
+    private int shootNumber = 1;
     private boolean done_execute = false;
     //Poses
     private final PoseFactory poseFactory = PoseFactory.degrees();
@@ -95,22 +96,30 @@ public class TestDetectionOnOldRobot extends LinearOpMode {
     public void doneExecute() {
         done_execute = true;}
     // Autonomous Routines
+    public void shootPrint() {
+        telemetry.addLine("shoot" + shootNumber);
+        telemetry.update();
+        shootNumber++;
+    }
     public Command Start() {
         return sequential(
 //                instant(this::liftDolphin),
                 follow(follower, start_homeShoot()),
-                instant(this::doneExecute),
-                waitMs(1000)
+
                 //Shoot
 //                instant(this::shoot),
-//                waitMs(SHOOT_TIME_MS),
+                waitMs(SHOOT_TIME_MS),
 //                instant(this::dontShoot),
+                instant(this::shootPrint),
                 //Collect Garden
-//                follow(follower, homeShoot_collectGardenStart()),
-//                follow(follower, collectGardenStart_collectGardenEnd()),
+                follow(follower, homeShoot_collectGardenStart()),
+                follow(follower, collectGardenStart_collectGardenEnd()),
                 //Get Ready to Shoot Again
-//                follow(follower, collectGardenEnd_approachHomeShoot()),
-//                follow(follower, approachHomeShoot_homeShoot()),
+                follow(follower, collectGardenEnd_approachHomeShoot()),
+                follow(follower, approachHomeShoot_homeShoot()),
+                //Check for hive tip
+                instant(this::doneExecute),
+                waitMs(1000)
         );
     }
     public Command ShootOtherSide() {
@@ -120,19 +129,21 @@ public class TestDetectionOnOldRobot extends LinearOpMode {
 //                instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
 //                instant(this::dontShoot),
+                instant(this::shootPrint),
                 // collect away flower
-                follow(follower, awayShoot_collectAwayFlowerStart()),
-//                instant(this::lowerDolphin),
-                waitMs(LOWER_DOLPHIN_TIME_MS),
-                follow(follower, collectAwayFlowerStart_collectAwayFlowerEnd()),
-                waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, collectAwayFlowerEnd_collectAwayFlowerStart()),
-//                instant(this::liftDolphin),
-                //shoot on other side for second tip
-                follow(follower, collectAwayFlowerStart_awayShoot()),
-//                instant(this::shoot),
-                waitMs(SHOOT_TIME_MS),
-//                instant(this::dontShoot),
+//                follow(follower, awayShoot_collectAwayFlowerStart()),
+////                instant(this::lowerDolphin),
+//                waitMs(LOWER_DOLPHIN_TIME_MS),
+//                follow(follower, collectAwayFlowerStart_collectAwayFlowerEnd()),
+//                waitMs(COLLECT_FLOWER_TIME_MS),
+//                follow(follower, collectAwayFlowerEnd_collectAwayFlowerStart()),
+////                instant(this::liftDolphin),
+//                //shoot on other side for second tip
+//                follow(follower, collectAwayFlowerStart_awayShoot()),
+////                instant(this::shoot),
+//                waitMs(SHOOT_TIME_MS),
+////                instant(this::dontShoot),
+//                instant(this::shootPrint),
                 follow(follower, awayShoot_park())
         );
     }
@@ -142,6 +153,7 @@ public class TestDetectionOnOldRobot extends LinearOpMode {
 //                instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
 //                instant(this::dontShoot),
+                instant(this::shootPrint),
                 // collect home flower
                 follow(follower, homeShoot_collectHomeFlowerStart()),
 //                instant(this::lowerDolphin),
@@ -155,19 +167,21 @@ public class TestDetectionOnOldRobot extends LinearOpMode {
 //                instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
 //                instant(this::dontShoot),
+                instant(this::shootPrint),
                 // collect away flower
-                follow(follower, awayShoot_collectAwayFlowerStart()),
-//                instant(this::lowerDolphin),
-                waitMs(LOWER_DOLPHIN_TIME_MS),
-                follow(follower, collectAwayFlowerStart_collectAwayFlowerEnd()),
-                waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, collectAwayFlowerEnd_collectAwayFlowerStart()),
-//                instant(this::liftDolphin),
-                // awayShoot again
-                follow(follower, collectAwayFlowerStart_awayShoot()),
-//                instant(this::shoot),
-                waitMs(SHOOT_TIME_MS),
-//                instant(this::dontShoot),
+//                follow(follower, awayShoot_collectAwayFlowerStart()),
+////                instant(this::lowerDolphin),
+//                waitMs(LOWER_DOLPHIN_TIME_MS),
+//                follow(follower, collectAwayFlowerStart_collectAwayFlowerEnd()),
+//                waitMs(COLLECT_FLOWER_TIME_MS),
+//                follow(follower, collectAwayFlowerEnd_collectAwayFlowerStart()),
+////                instant(this::liftDolphin),
+//                // awayShoot again
+//                follow(follower, collectAwayFlowerStart_awayShoot()),
+////                instant(this::shoot),
+//                waitMs(SHOOT_TIME_MS),
+////                instant(this::dontShoot),
+//                instant(this::shootPrint),
                 // park
                 follow(follower, awayShoot_park())
         );
@@ -223,23 +237,19 @@ public class TestDetectionOnOldRobot extends LinearOpMode {
             follower.update();
             Scheduler.execute();
             if (done_execute) {
-                telemetry.addLine("Start circuit executed");
-                telemetry.update();
                 done_execute = false;
                 if (llResult != null && llResult.isValid()) {
-                    telemetry.addLine("Limelight Active; ID:" + llResult.getFiducialResults());
-                    telemetry.update();
                     if (!llResult.getFiducialResults().isEmpty()) {
                         //Apriltags detected -> No Hive Tip -> schedule(ifNoHiveTip)
                         telemetry.addLine("No Hive Tip");
                         telemetry.update();
-                        Scheduler.schedule(ifNoHiveTip());
+                        Scheduler.schedule(ShootSameSide());
                     }
                 } else {
                     //No Apriltags detected -> Yes hive Tip -> schedule(ifHiveTip)
                     telemetry.addLine("Hive Tip Identified");
                     telemetry.update();
-                    Scheduler.schedule(ifHiveTip());
+                    Scheduler.schedule(ShootOtherSide());
                 }
             }
 
