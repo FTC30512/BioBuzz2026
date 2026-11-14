@@ -55,20 +55,19 @@ public class Blue1 extends LinearOpMode {
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose start = poseFactory.of(83, 132.5, 270);
-    private final Pose homeShoot = poseFactory.of(114, 123, 235);
-    private final Pose collectGardenStart = poseFactory.of(120, 131.5, 0);
-    private final Pose collectGardenEnd = poseFactory.of(131, 131.5, 0);
-    private final Pose approachHomeShoot = poseFactory.of(109, 121.5, 270);
-
+    private final Pose shoot1 = poseFactory.of(114, 123, 235);
+    private final Pose blueGardenStart = poseFactory.of(120, 131.5, 0);
+    private final Pose blueGardenEnd = poseFactory.of(131, 131.5, 0);
+    private final Pose blueGardenEnd_shoot1CP = poseFactory.of(131,123, 0);
     //Shoot Other Side
-    private final Pose awayShoot = poseFactory.of(114, 18, 125);
-    private final Pose collectAwayFlowerStart = poseFactory.of(94.5, 22.5, 270);
-    private final Pose collectAwayFlowerEnd = poseFactory.of(94.5, 12.5, 270);
-    private final Pose park = poseFactory.of(131, 46, 180);
-    private final Pose awayShoot_parkCP = poseFactory.of(114, 44, 0);
+    private final Pose shoot2 = poseFactory.of(114, 18, 125);
+    private final Pose blueFlower1Start = poseFactory.of(94.5, 22.5, 270);
+    private final Pose blueFlower1End = poseFactory.of(94.5, 12.5, 270);
+    private final Pose home = poseFactory.of(131, 46, 180);
+    private final Pose shoot2_homeCP = poseFactory.of(114, 44, 0);
     //Shoot Same Side
-    private final Pose collectHomeFlowerStart = poseFactory.of(120, 94.5, 0);
-    private final Pose collectHomeFlowerEnd = poseFactory.of(127, 94.5, 0);
+    private final Pose blueFlower2Start = poseFactory.of(120, 94.5, 0);
+    private final Pose blueFlower2End = poseFactory.of(127, 94.5, 0);
 
     // Commands
     private void dontShoot() {
@@ -98,18 +97,17 @@ public class Blue1 extends LinearOpMode {
     public Command Start() {
         return sequential(
                 instant(this::liftDolphin),
-                follow(follower, start_homeShoot()),
+                follow(follower, start_shoot1()),
                 //Shoot
                 waitMs(1000),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
                 //Collect Garden
-                follow(follower, homeShoot_collectGardenStart()),
-                follow(follower, collectGardenStart_collectGardenEnd()),
+                follow(follower, shoot1_blueGardenStart()),
+                follow(follower, blueGardenStart_blueGardenEnd()),
                 //Get Ready to Shoot Again
-                follow(follower, collectGardenEnd_approachHomeShoot()),
-                follow(follower, approachHomeShoot_homeShoot()),
+                follow(follower, blueGardenEnd_shoot1()),
                 //Check for hive tip
                 instant(this::doneExecute),
                 waitMs(1000)
@@ -118,24 +116,24 @@ public class Blue1 extends LinearOpMode {
     public Command ShootOtherSide() {
         return sequential(
                 //go to other side and shoot
-                follow(follower, homeShoot_awayShoot()),
+                follow(follower, shoot1_shoot2()),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
                 // collect away flower
-                follow(follower, awayShoot_collectAwayFlowerStart()),
+                follow(follower, shoot2_blueFlower1Start()),
                 instant(this::lowerDolphin),
                 waitMs(LOWER_DOLPHIN_TIME_MS),
-                follow(follower, collectAwayFlowerStart_collectAwayFlowerEnd()),
+                follow(follower, blueFlower1Start_blueFlower1End()),
                 waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, collectAwayFlowerEnd_collectAwayFlowerStart()),
+                follow(follower, blueFlower1End_blueFlower1Start()),
                 instant(this::liftDolphin),
-                //shoot on other side for second tip
-                follow(follower, collectAwayFlowerStart_awayShoot()),
+                //shoot on other side again for second tip
+                follow(follower, blueFlower1Start_shoot2()),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
-                follow(follower, awayShoot_park())
+                follow(follower, shoot2_home())
         );
     }
     public Command ShootSameSide() {
@@ -145,33 +143,33 @@ public class Blue1 extends LinearOpMode {
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
                 // collect home flower
-                follow(follower, homeShoot_collectHomeFlowerStart()),
+                follow(follower, shoot1_blueFlower2Start()),
                 instant(this::lowerDolphin),
                 waitMs(LOWER_DOLPHIN_TIME_MS),
-                follow(follower, collectHomeFlowerStart_collectHomeFlowerEnd()),
+                follow(follower, blueFlower2Start_blueFlower2End()),
                 waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, collectHomeFlowerEnd_collectHomeFlowerStart()),
+                follow(follower, blueFlower2End_blueFlower2Start()),
                 instant(this::liftDolphin),
                 // shoot on other side
-                follow(follower, collectHomeFlowerStart_awayShoot()),
+                follow(follower, blueFlower2Start_shoot2()),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
                 // collect away flower
-                follow(follower, awayShoot_collectAwayFlowerStart()),
+                follow(follower, shoot2_blueFlower1Start()),
                 instant(this::lowerDolphin),
                 waitMs(LOWER_DOLPHIN_TIME_MS),
-                follow(follower, collectAwayFlowerStart_collectAwayFlowerEnd()),
+                follow(follower, blueFlower1Start_blueFlower1End()),
                 waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, collectAwayFlowerEnd_collectAwayFlowerStart()),
+                follow(follower, blueFlower1End_blueFlower1Start()),
                 instant(this::liftDolphin),
                 // awayShoot again
-                follow(follower, collectAwayFlowerStart_awayShoot()),
+                follow(follower, blueFlower1Start_shoot2()),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
                 // park
-                follow(follower, awayShoot_park())
+                follow(follower, shoot2_home())
         );
     }
 
@@ -242,63 +240,59 @@ public class Blue1 extends LinearOpMode {
     }
     //Paths
     //StartRoutine
-    public Path start_homeShoot() {
-        return Paths.line(start, homeShoot).linear(start, homeShoot);
+    public Path start_shoot1() {
+        return Paths.line(start, shoot1).linear(start, shoot1);
     }
 
-    public Path homeShoot_collectGardenStart() {
-        return Paths.line(homeShoot, collectGardenStart).linear(0, 0);
+    public Path shoot1_blueGardenStart() {
+        return Paths.line(shoot1, blueGardenStart).linear(0, 0);
     }
 
-    public Path collectGardenStart_collectGardenEnd() {
-        return Paths.line(collectGardenStart, collectGardenEnd).linear(collectGardenStart, collectGardenEnd);
+    public Path blueGardenStart_blueGardenEnd() {
+        return Paths.line(blueGardenStart, blueGardenEnd).linear(blueGardenStart, blueGardenEnd);
     }
 
-    public Path collectGardenEnd_approachHomeShoot() {
-        return Paths.line(collectGardenEnd, approachHomeShoot).linear(collectGardenEnd, approachHomeShoot);
-    }
-
-    public Path approachHomeShoot_homeShoot() {
-        return Paths.line(approachHomeShoot, homeShoot).linear(approachHomeShoot, homeShoot);
+    public Path blueGardenEnd_shoot1() {
+        return Paths.curve(blueGardenEnd, blueGardenEnd_shoot1CP, shoot1).linear(blueGardenEnd, shoot1);
     }
     //ShootOtherSide
-    public Path homeShoot_awayShoot() {
-        return Paths.line(homeShoot, awayShoot).linear(homeShoot, awayShoot);
+    public Path shoot1_shoot2() {
+        return Paths.line(shoot1, shoot2).linear(shoot1, shoot2);
     }
 
-    public Path awayShoot_collectAwayFlowerStart() {
-        return Paths.line(awayShoot, collectAwayFlowerStart).linear(270, 270);
+    public Path shoot2_blueFlower1Start() {
+        return Paths.line(shoot2, blueFlower1Start).linear(270, 270);
     }
 
-    public Path collectAwayFlowerStart_collectAwayFlowerEnd() {
-        return Paths.line(collectAwayFlowerStart, collectAwayFlowerEnd).linear(collectAwayFlowerStart, collectAwayFlowerEnd);
+    public Path blueFlower1Start_blueFlower1End() {
+        return Paths.line(blueFlower1Start, blueFlower1End).linear(blueFlower1Start, blueFlower1End);
     }
 
-    public Path collectAwayFlowerEnd_collectAwayFlowerStart() {
-        return Paths.line(collectAwayFlowerEnd, collectAwayFlowerStart).linear(collectAwayFlowerEnd, collectAwayFlowerStart);
+    public Path blueFlower1End_blueFlower1Start() {
+        return Paths.line(blueFlower1End, blueFlower1Start).linear(blueFlower1End, blueFlower1Start);
     }
 
-    public Path collectAwayFlowerStart_awayShoot() {
-        return Paths.line(collectAwayFlowerStart, awayShoot).linear(135, 135);
+    public Path blueFlower1Start_shoot2() {
+        return Paths.line(blueFlower1Start, shoot2).linear(125, 125);
     }
 
-    public Path awayShoot_park() {
-        return Paths.curve(awayShoot, awayShoot_parkCP, park).linear(awayShoot, park);
+    public Path shoot2_home() {
+        return Paths.curve(shoot2, shoot2_homeCP, home).linear(shoot2, home);
     }
     // ShootSameSide
-    public Path homeShoot_collectHomeFlowerStart() {
-        return Paths.line(homeShoot, collectHomeFlowerStart).linear(homeShoot, collectHomeFlowerStart);
+    public Path shoot1_blueFlower2Start() {
+        return Paths.line(shoot1, blueFlower2Start).linear(shoot1, blueFlower2Start);
     }
 
-    public Path collectHomeFlowerStart_collectHomeFlowerEnd() {
-        return Paths.line(collectHomeFlowerStart, collectHomeFlowerEnd).linear(collectHomeFlowerStart, collectHomeFlowerEnd);
+    public Path blueFlower2Start_blueFlower2End() {
+        return Paths.line(blueFlower2Start, blueFlower2End).linear(blueFlower2Start, blueFlower2End);
     }
 
-    public Path collectHomeFlowerEnd_collectHomeFlowerStart() {
-        return Paths.line(collectHomeFlowerEnd, collectHomeFlowerStart).linear(collectHomeFlowerEnd, collectHomeFlowerStart);
+    public Path blueFlower2End_blueFlower2Start() {
+        return Paths.line(blueFlower2End, blueFlower2Start).linear(blueFlower2End, blueFlower2Start);
     }
 
-    public Path collectHomeFlowerStart_awayShoot() {
-        return Paths.line(collectHomeFlowerStart, awayShoot).linear(collectHomeFlowerStart, awayShoot);
+    public Path blueFlower2Start_shoot2() {
+        return Paths.line(blueFlower2Start, shoot2).linear(blueFlower2Start, shoot2);
     }
 }
