@@ -15,15 +15,17 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.RobotFunctions;
 
 @TeleOp(name = "Red TeleOp", group = "Main")
 public class RedTeleOp extends LinearOpMode {
@@ -33,7 +35,7 @@ public class RedTeleOp extends LinearOpMode {
     private DcMotorEx shooter;
     private CRServo leftCR, rightCR;
     private Servo leftDolphin, rightDolphin;
-
+    private IMU imu;
     private GoBildaPinpointDriver pinpoint;
     Limelight3A limelight;
     private LLResult llResult;
@@ -42,31 +44,24 @@ public class RedTeleOp extends LinearOpMode {
     private double maxTurnSpeed = 0.5;
     // --- Helper Classes ---
     private Movement movement;
+    private RobotFunctions robot;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
-    private boolean is_lowered = false;
+
     private double tag_offset = 0;
 
     // 1. ADD THIS TRACKING VARIABLE HERE:
     private boolean lastLeftBumper = false;
 
-    public void resetToCorner() {
-        pinpoint.setPosition(
-                new Pose2D(
-                        DistanceUnit.INCH,
-                        9.0,
-                        8.5,
-                        AngleUnit.DEGREES,
-                        0.0
-                )
-        );
-    }
 
     @Override
     public void runOpMode() {
 
         // --- Initialize hardware ---
         initHardware();
-        liftDolphin();
+
+        robot = new RobotFunctions(hardwareMap);
+
+        robot.liftDolphin();
         // --- Initialize helpers ---
         movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint, telemetry);
 
@@ -78,21 +73,21 @@ public class RedTeleOp extends LinearOpMode {
 
         // --- Main loop ---
         while (opModeIsActive()) {
-            shooter.setVelocity(1335);
+            robot.setShooterVelocity(1335);
             pinpoint.update ();
 
             if (gamepad1.b) {
-                resetHeading ();
+                robot.resetHeading ();
             }
             if (gamepad1.x) {
-                resetToCorner();
+                robot.resetToCorner();
             }
 //             --- Intake ---
             if (gamepad1.y)
             {
                 intake.setPower ( -1 );
             }else{
-                intake.setPower(0.9);
+                intake.setPower(0.85);
             }
 
             if (gamepad1.dpad_up){
@@ -107,29 +102,29 @@ public class RedTeleOp extends LinearOpMode {
                 shoot();
             }
             else{
-                leftCR.setPower(0);
-                rightCR.setPower(0);
-                integration.setPower(0);
+                robot.stopShooting();
             }
+
 
             // 2. REPLACE YOUR OLD left_bumper CHECK WITH THIS:
             boolean currentLeftBumper = gamepad1.left_bumper;
             if (currentLeftBumper && !lastLeftBumper) {
-                if (is_lowered) {
-                    liftDolphin();
+                if (robot.isLowered) {
+                    robot.liftDolphin();
                 } else {
-                    lowerDolphin();
+                    robot.lowerDolphin();
                 }
             }
             lastLeftBumper = currentLeftBumper; // Save state for the next loop iteration
-            double currentHeading = getHeading();
-            limelight.updateRobotOrientation(getRawHeading());
-            llResult = limelight.getLatestResult();
+
+            robot.updateLimelightHeading();
+
+            llResult = robot.getLatestResult();
             if (llResult != null && llResult.isValid()){
                 telemetry.addData("Tx", llResult.getTx());
                 telemetry.addData("Ty", llResult.getTy());
                 telemetry.addData("Ta", llResult.getTa());
-                telemetry.addLine("Current Heading angle" + getHeading());
+                telemetry.addLine("Current Heading angle" + robot.getHeading());
                 telemetry.addLine("pinpoint angle" + pinpoint.getHeading(AngleUnit.DEGREES));
 
                 telemetry.update();
@@ -141,7 +136,11 @@ public class RedTeleOp extends LinearOpMode {
 //            telemetry.addData("Null: ", llResult!=null);
 //            telemetry.addData("is turning: ", isTurning);
 //            telemetry.addData ( "pinpoint heading: ", pinpoint.getHeading ( AngleUnit.DEGREES ) );
+
             telemetry.update ();
+//            telemetry.addData("Pinpoint Heading: ", pinpoint.getHeading(AngleUnit.DEGREES));
+//            telemetry.addData("imu heading: ", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+//            telemetry.update();
         }
     }
 
@@ -181,6 +180,18 @@ public class RedTeleOp extends LinearOpMode {
         pinpoint.setEncoderResolution ( GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD );
         pinpoint.resetPosAndIMU ();
 
+        // Sensors
+
+//        imu = hardwareMap.get(IMU.class, "imu");
+//
+//        IMU.Parameters parameters = new IMU.Parameters(
+//                new RevHubOrientationOnRobot(
+//                        RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
+//                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
+//                )
+//        );
+//        imu.initialize(parameters);
+
         for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
@@ -191,16 +202,8 @@ public class RedTeleOp extends LinearOpMode {
 
         runtime.reset();
     }
-    public void lowerDolphin(){
-        leftDolphin.setPosition(0.535);
-        rightDolphin.setPosition(0.55);
-        is_lowered = true;
-    }
-    public void liftDolphin(){
-        leftDolphin.setPosition(0.1);
-        rightDolphin.setPosition(0.1);
-        is_lowered = false;
-    }
+
+
     // --- Shooting method ---
     public void shoot() {
         if (llResult != null && llResult.isValid()) {
@@ -215,7 +218,7 @@ public class RedTeleOp extends LinearOpMode {
         if(!isTurning) {
             leftCR.setPower(-1);
             rightCR.setPower(1);
-            integration.setPower(0.9);
+            integration.setPower(0.85);
         }
         else{
             leftCR.setPower(0);
@@ -223,16 +226,7 @@ public class RedTeleOp extends LinearOpMode {
             integration.setPower(0);
         }
     }
-    private double getHeading() {
-        double angle = getRawHeading();
-        if (angle > 180) angle -= 360;
-        if (angle < -180) angle += 360;
-        return angle;
-    }
 
-    private double getRawHeading() {
-        return pinpoint.getHeading ( AngleUnit.DEGREES );
-    }
 
     public void pid_turn_by_gyro(double targetYaw){
 
@@ -273,7 +267,5 @@ public class RedTeleOp extends LinearOpMode {
         rightFront.setPower(rfPower);
         rightRear.setPower(rrPower);
     }
-    public void resetHeading() {
-        pinpoint.resetPosAndIMU ();
-    }
+
 }
