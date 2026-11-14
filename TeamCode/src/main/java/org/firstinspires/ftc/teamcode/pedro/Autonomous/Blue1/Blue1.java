@@ -62,12 +62,12 @@ public class Blue1 extends LinearOpMode {
     //Shoot Other Side
     private final Pose shoot2 = poseFactory.of(114, 18, 125);
     private final Pose blueFlower1Start = poseFactory.of(94.5, 22.5, 270);
-    private final Pose blueFlower1End = poseFactory.of(94.5, 12.5, 270);
+    private final Pose blueFlower1End = poseFactory.of(94.5, 15.5, 270);
     private final Pose home = poseFactory.of(131, 46, 180);
     private final Pose shoot2_homeCP = poseFactory.of(114, 44, 0);
     //Shoot Same Side
     private final Pose blueFlower2Start = poseFactory.of(120, 94.5, 0);
-    private final Pose blueFlower2End = poseFactory.of(127, 94.5, 0);
+    private final Pose blueFlower2End = poseFactory.of(124, 94.5, 0);
 
     // Commands
     private void dontShoot() {
@@ -109,6 +109,7 @@ public class Blue1 extends LinearOpMode {
                 //Get Ready to Shoot Again
                 follow(follower, blueGardenEnd_shoot1()),
                 //Check for hive tip
+                waitMs(1000),
                 instant(this::doneExecute),
                 waitMs(1000)
         );
@@ -261,7 +262,7 @@ public class Blue1 extends LinearOpMode {
     }
 
     public Path shoot2_blueFlower1Start() {
-        return Paths.line(shoot2, blueFlower1Start).linear(270, 270);
+        return Paths.line(shoot2, blueFlower1Start).linear(shoot2, blueFlower1Start);
     }
 
     public Path blueFlower1Start_blueFlower1End() {
@@ -273,7 +274,7 @@ public class Blue1 extends LinearOpMode {
     }
 
     public Path blueFlower1Start_shoot2() {
-        return Paths.line(blueFlower1Start, shoot2).linear(125, 125);
+        return Paths.line(blueFlower1Start, shoot2).linear(blueFlower1Start, shoot2);
     }
 
     public Path shoot2_home() {
