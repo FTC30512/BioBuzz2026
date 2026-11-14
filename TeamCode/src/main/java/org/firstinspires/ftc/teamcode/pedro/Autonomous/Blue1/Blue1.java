@@ -24,30 +24,21 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
-import org.firstinspires.ftc.teamcode.TeleOp.Movement;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-
-@Autonomous(name = "Blue 1", group = "Blue1")
+@Autonomous(name = "Blue1", group = "Blue1")
 public class Blue1 extends LinearOpMode {
 
     private Follower follower;
-
-    private boolean is_lowered = false;
 
     //Limelight
     private IMU imu;
     private GoBildaPinpointDriver pinpoint;
     Limelight3A limelight;
     private LLResult llResult;
-    private boolean isTurning = false;
     // Motors & Servos
     private DcMotor intake, integration;
     private DcMotorEx shooter;
@@ -63,49 +54,21 @@ public class Blue1 extends LinearOpMode {
     //Poses
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(82.7448, 132.3672, 270);
-    private final Pose shoot1 = poseFactory.of(84, 123, 270);
-    private final Pose collectGardenPart1Start = poseFactory.of(84, 123, 270);
-    private final Pose collectGardenPart1 = poseFactory.of(120, 131.5, 0);
-    private final Pose collectGardenPart2Start = poseFactory.of(120, 131.5, 0);
-    private final Pose collectGardenPart2 = poseFactory.of(131, 131.5, 0);
-    private final Pose shoot2Part1Start = poseFactory.of(131, 131.5, 0);
-    private final Pose shoot2Part1 = poseFactory.of(109, 121.5, 270);
-    private final Pose shoot2Part2Start = poseFactory.of(109, 121.5, 270);
-    private final Pose shoot2Part2 = poseFactory.of(105, 121.5, 235);
+    private final Pose start = poseFactory.of(83, 132.5, 270);
+    private final Pose homeShoot = poseFactory.of(114, 123, 235);
+    private final Pose collectGardenStart = poseFactory.of(120, 131.5, 0);
+    private final Pose collectGardenEnd = poseFactory.of(131, 131.5, 0);
+    private final Pose approachHomeShoot = poseFactory.of(109, 121.5, 270);
 
     //Shoot Other Side
-    private final Pose shoot3 = poseFactory.of(114, 18, 125);
-    private final Pose collectAwayFlowerPart1Start = poseFactory.of(114, 18, 270);
-    private final Pose collectAwayFlowerPart1 = poseFactory.of(94.5, 22.5, 270);
-    private final Pose collectAwayFlowerPart2Start = poseFactory.of(94.5, 22.5, 270);
-    private final Pose collectAwayFlowerPart2 = poseFactory.of(94.5, 13, 270);
-    private final Pose shoot4Part1Start = poseFactory.of(94.5, 13, 270);
-    private final Pose shoot4Part1 = poseFactory.of(95.4792, 22.5, 270);
-    private final Pose shoot4Part2Start = poseFactory.of(95.4792, 22.5, 125);
-    private final Pose shoot4Part2 = poseFactory.of(114, 17.5, 125);
-    private final Pose parkStart = poseFactory.of(114, 17.5, 125);
+    private final Pose awayShoot = poseFactory.of(114, 18, 125);
+    private final Pose collectAwayFlowerStart = poseFactory.of(94.5, 22.5, 270);
+    private final Pose collectAwayFlowerEnd = poseFactory.of(94.5, 12.5, 270);
     private final Pose park = poseFactory.of(131, 46, 180);
-    private final Pose parkControl1 = poseFactory.of(114, 44, 0);
+    private final Pose awayShoot_parkCP = poseFactory.of(114, 44, 0);
     //Shoot Same Side
-    private final Pose collectHomeFlowerPart1B = poseFactory.of(120, 94.5, 0);
-    private final Pose collectHomeFlowerPart2StartB = poseFactory.of(120, 94.5, 0);
-    private final Pose collectHomeFlowerPart2B = poseFactory.of(128, 94.5, 0);
-    private final Pose shoot4Part1StartB = poseFactory.of(128, 94.5, 0);
-    private final Pose shoot4Part1B = poseFactory.of(120, 94, 0);
-    private final Pose shoot4Part2StartB = poseFactory.of(120, 94, 0);
-    private final Pose shoot4Part2B = poseFactory.of(114, 18, 125);
-    private final Pose collectAwayFlowerPart1StartB = poseFactory.of(114, 18, 270);
-    private final Pose collectAwayFlowerPart1B = poseFactory.of(94.5, 22.5, 270);
-    private final Pose collectAwayFlowerPart2StartB = poseFactory.of(94.5, 22.5, 270);
-    private final Pose collectAwayFlowerPart2B = poseFactory.of(94.5, 13, 270);
-    private final Pose shoot5Part1StartB = poseFactory.of(94.5, 13, 270);
-    private final Pose shoot5Part1B = poseFactory.of(95, 22.5, 270);
-    private final Pose shoot5Part2StartB = poseFactory.of(95, 22.5, 125);
-    private final Pose shoot5Part2B = poseFactory.of(114, 17.5, 125);
-    private final Pose parkStartB = poseFactory.of(114, 17.5, 125);
-    private final Pose parkB = poseFactory.of(131, 46, 180);
-    private final Pose parkControl1B = poseFactory.of(114, 44, 0);
+    private final Pose collectHomeFlowerStart = poseFactory.of(120, 94.5, 0);
+    private final Pose collectHomeFlowerEnd = poseFactory.of(127, 94.5, 0);
 
     // Commands
     private void dontShoot() {
@@ -117,12 +80,10 @@ public class Blue1 extends LinearOpMode {
     public void lowerDolphin(){
         leftDolphin.setPosition(0.535);
         rightDolphin.setPosition(0.55);
-        is_lowered = true;
     }
     public void liftDolphin(){
         leftDolphin.setPosition(0.1);
         rightDolphin.setPosition(0.1);
-        is_lowered = false;
     }
     // --- Shooting method ---
     public void shoot() {
@@ -131,47 +92,50 @@ public class Blue1 extends LinearOpMode {
         integration.setPower(1);
     }
     public void doneExecute() {
-        done_execute = true;}
+        done_execute = true;
+    }
     // Autonomous Routines
     public Command Start() {
         return sequential(
                 instant(this::liftDolphin),
-                follow(follower, shoot1()),
-                waitMs(1000),
+                follow(follower, start_homeShoot()),
                 //Shoot
+                waitMs(1000),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
                 //Collect Garden
-                follow(follower, collectGardenPart1()),
-                follow(follower, collectGardenPart2()),
+                follow(follower, homeShoot_collectGardenStart()),
+                follow(follower, collectGardenStart_collectGardenEnd()),
                 //Get Ready to Shoot Again
-                follow(follower, shoot2Part1()),
-                follow(follower, shoot2Part2()),
-                instant(this::doneExecute)
+                follow(follower, collectGardenEnd_approachHomeShoot()),
+                follow(follower, approachHomeShoot_homeShoot()),
+                //Check for hive tip
+                instant(this::doneExecute),
+                waitMs(1000)
         );
     }
     public Command ShootOtherSide() {
         return sequential(
                 //go to other side and shoot
-                follow(follower, shoot3()),
+                follow(follower, homeShoot_awayShoot()),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
                 // collect away flower
-                follow(follower, collectAwayFlowerPart1()),
+                follow(follower, awayShoot_collectAwayFlowerStart()),
                 instant(this::lowerDolphin),
                 waitMs(LOWER_DOLPHIN_TIME_MS),
-                follow(follower, collectAwayFlowerPart2()),
+                follow(follower, collectAwayFlowerStart_collectAwayFlowerEnd()),
                 waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, shoot4Part1()),
+                follow(follower, collectAwayFlowerEnd_collectAwayFlowerStart()),
                 instant(this::liftDolphin),
                 //shoot on other side for second tip
-                follow(follower, shoot4Part2()),
+                follow(follower, collectAwayFlowerStart_awayShoot()),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
-                follow(follower, park())
+                follow(follower, awayShoot_park())
         );
     }
     public Command ShootSameSide() {
@@ -181,35 +145,36 @@ public class Blue1 extends LinearOpMode {
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
                 // collect home flower
-                follow(follower, collectHomeFlowerPart1B()),
+                follow(follower, homeShoot_collectHomeFlowerStart()),
                 instant(this::lowerDolphin),
                 waitMs(LOWER_DOLPHIN_TIME_MS),
-                follow(follower, collectHomeFlowerPart2B()),
+                follow(follower, collectHomeFlowerStart_collectHomeFlowerEnd()),
                 waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, shoot4Part1B()),
+                follow(follower, collectHomeFlowerEnd_collectHomeFlowerStart()),
                 instant(this::liftDolphin),
                 // shoot on other side
-                follow(follower, shoot4Part2B()),
+                follow(follower, collectHomeFlowerStart_awayShoot()),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
                 // collect away flower
-                follow(follower, collectAwayFlowerPart1B()),
+                follow(follower, awayShoot_collectAwayFlowerStart()),
                 instant(this::lowerDolphin),
                 waitMs(LOWER_DOLPHIN_TIME_MS),
-                follow(follower, collectAwayFlowerPart2B()),
+                follow(follower, collectAwayFlowerStart_collectAwayFlowerEnd()),
                 waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, shoot5Part1B()),
+                follow(follower, collectAwayFlowerEnd_collectAwayFlowerStart()),
                 instant(this::liftDolphin),
-                // shoot on other side to tip again
-                follow(follower, shoot5Part2B()),
+                // awayShoot again
+                follow(follower, collectAwayFlowerStart_awayShoot()),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
                 // park
-                follow(follower, parkB())
+                follow(follower, awayShoot_park())
         );
     }
+
     @Override
     public void runOpMode() {
         Scheduler.reset();
@@ -217,9 +182,6 @@ public class Blue1 extends LinearOpMode {
         Limelight3A limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.pipelineSwitch(1);
         limelight.start();
-
-        telemetry.addLine("Ready");
-        telemetry.update();
 
         follower = Constants.create(hardwareMap);
         follower.setPose(start);
@@ -235,6 +197,9 @@ public class Blue1 extends LinearOpMode {
         shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
         shooter.setDirection(DcMotorSimple.Direction.REVERSE);
         integration = hardwareMap.get(DcMotor.class, "Integration");
+
+        telemetry.addLine("Ready");
+        telemetry.update();
 
         waitForStart();
         resetRuntime();
@@ -252,18 +217,18 @@ public class Blue1 extends LinearOpMode {
                 done_execute = false;
                 if (llResult != null && llResult.isValid()) {
                     if (!llResult.getFiducialResults().isEmpty()) {
+                        //Apriltags detected -> No Hive Tip -> schedule(ifNoHiveTip)
                         telemetry.addLine("No Hive Tip");
+                        telemetry.update();
                         Scheduler.schedule(ShootSameSide());
-                    } else {
-                        telemetry.addLine("Hive Tip Identified");
-                        Scheduler.schedule(ShootOtherSide());
                     }
                 } else {
+                    //No Apriltags detected -> Yes hive Tip -> schedule(ifHiveTip)
                     telemetry.addLine("Hive Tip Identified");
+                    telemetry.update();
                     Scheduler.schedule(ShootOtherSide());
                 }
             }
-
             telemetry.addData("x", follower.pose().x());
             telemetry.addData("y", follower.pose().y());
             telemetry.addData("heading", follower.pose().heading());
@@ -276,84 +241,64 @@ public class Blue1 extends LinearOpMode {
         }
     }
     //Paths
-    //Start
-    public Path shoot1() {
-        return Paths.line(start, shoot1).linear(start, shoot1);
+    //StartRoutine
+    public Path start_homeShoot() {
+        return Paths.line(start, homeShoot).linear(start, homeShoot);
     }
 
-    public Path collectGardenPart1() {
-        return Paths.line(collectGardenPart1Start, collectGardenPart1).linear(collectGardenPart1Start, collectGardenPart1);
+    public Path homeShoot_collectGardenStart() {
+        return Paths.line(homeShoot, collectGardenStart).linear(0, 0);
     }
 
-    public Path collectGardenPart2() {
-        return Paths.line(collectGardenPart2Start, collectGardenPart2).linear(collectGardenPart2Start, collectGardenPart2);
+    public Path collectGardenStart_collectGardenEnd() {
+        return Paths.line(collectGardenStart, collectGardenEnd).linear(collectGardenStart, collectGardenEnd);
     }
 
-    public Path shoot2Part1() {
-        return Paths.line(shoot2Part1Start, shoot2Part1).linear(shoot2Part1Start, shoot2Part1);
+    public Path collectGardenEnd_approachHomeShoot() {
+        return Paths.line(collectGardenEnd, approachHomeShoot).linear(collectGardenEnd, approachHomeShoot);
     }
 
-    public Path shoot2Part2() {
-        return Paths.line(shoot2Part2Start, shoot2Part2).linear(shoot2Part2Start, shoot2Part2);
+    public Path approachHomeShoot_homeShoot() {
+        return Paths.line(approachHomeShoot, homeShoot).linear(approachHomeShoot, homeShoot);
     }
     //ShootOtherSide
-    public Path shoot3() {
-        return Paths.line(shoot2Part2, shoot3).linear(shoot2Part2, shoot3);
+    public Path homeShoot_awayShoot() {
+        return Paths.line(homeShoot, awayShoot).linear(homeShoot, awayShoot);
     }
 
-    public Path collectAwayFlowerPart1() {
-        return Paths.line(collectAwayFlowerPart1Start, collectAwayFlowerPart1).linear(collectAwayFlowerPart1Start, collectAwayFlowerPart1);
+    public Path awayShoot_collectAwayFlowerStart() {
+        return Paths.line(awayShoot, collectAwayFlowerStart).linear(270, 270);
     }
 
-    public Path collectAwayFlowerPart2() {
-        return Paths.line(collectAwayFlowerPart2Start, collectAwayFlowerPart2).linear(collectAwayFlowerPart2Start, collectAwayFlowerPart2);
+    public Path collectAwayFlowerStart_collectAwayFlowerEnd() {
+        return Paths.line(collectAwayFlowerStart, collectAwayFlowerEnd).linear(collectAwayFlowerStart, collectAwayFlowerEnd);
     }
 
-    public Path shoot4Part1() {
-        return Paths.line(shoot4Part1Start, shoot4Part1).linear(shoot4Part1Start, shoot4Part1);
+    public Path collectAwayFlowerEnd_collectAwayFlowerStart() {
+        return Paths.line(collectAwayFlowerEnd, collectAwayFlowerStart).linear(collectAwayFlowerEnd, collectAwayFlowerStart);
     }
 
-    public Path shoot4Part2() {
-        return Paths.line(shoot4Part2Start, shoot4Part2).linear(shoot4Part2Start, shoot4Part2);
+    public Path collectAwayFlowerStart_awayShoot() {
+        return Paths.line(collectAwayFlowerStart, awayShoot).linear(135, 135);
     }
 
-    public Path park() {
-        return Paths.curve(parkStart, parkControl1, park).linear(parkStart, park);
+    public Path awayShoot_park() {
+        return Paths.curve(awayShoot, awayShoot_parkCP, park).linear(awayShoot, park);
     }
     // ShootSameSide
-    public Path collectHomeFlowerPart1B() {
-        return Paths.line(shoot2Part2, collectHomeFlowerPart1B).linear(shoot2Part2, collectHomeFlowerPart1B);
+    public Path homeShoot_collectHomeFlowerStart() {
+        return Paths.line(homeShoot, collectHomeFlowerStart).linear(homeShoot, collectHomeFlowerStart);
     }
 
-    public Path collectHomeFlowerPart2B() {
-        return Paths.line(collectHomeFlowerPart2StartB, collectHomeFlowerPart2B).linear(collectHomeFlowerPart2StartB, collectHomeFlowerPart2B);
+    public Path collectHomeFlowerStart_collectHomeFlowerEnd() {
+        return Paths.line(collectHomeFlowerStart, collectHomeFlowerEnd).linear(collectHomeFlowerStart, collectHomeFlowerEnd);
     }
 
-    public Path shoot4Part1B() {
-        return Paths.line(shoot4Part1StartB, shoot4Part1B).linear(shoot4Part1StartB, shoot4Part1B);
+    public Path collectHomeFlowerEnd_collectHomeFlowerStart() {
+        return Paths.line(collectHomeFlowerEnd, collectHomeFlowerStart).linear(collectHomeFlowerEnd, collectHomeFlowerStart);
     }
 
-    public Path shoot4Part2B() {
-        return Paths.line(shoot4Part2StartB, shoot4Part2B).linear(shoot4Part2StartB, shoot4Part2B);
-    }
-
-    public Path collectAwayFlowerPart1B() {
-        return Paths.line(collectAwayFlowerPart1StartB, collectAwayFlowerPart1B).linear(collectAwayFlowerPart1StartB, collectAwayFlowerPart1B);
-    }
-
-    public Path collectAwayFlowerPart2B() {
-        return Paths.line(collectAwayFlowerPart2StartB, collectAwayFlowerPart2B).linear(collectAwayFlowerPart2StartB, collectAwayFlowerPart2B);
-    }
-
-    public Path shoot5Part1B() {
-        return Paths.line(shoot5Part1StartB, shoot5Part1B).linear(shoot5Part1StartB, shoot5Part1B);
-    }
-
-    public Path shoot5Part2B() {
-        return Paths.line(shoot5Part2StartB, shoot5Part2B).linear(shoot5Part2StartB, shoot5Part2B);
-    }
-
-    public Path parkB() {
-        return Paths.curve(parkStartB, parkControl1B, parkB).linear(parkStartB, parkB);
+    public Path collectHomeFlowerStart_awayShoot() {
+        return Paths.line(collectHomeFlowerStart, awayShoot).linear(collectHomeFlowerStart, awayShoot);
     }
 }
