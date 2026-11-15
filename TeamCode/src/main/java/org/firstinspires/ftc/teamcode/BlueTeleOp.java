@@ -26,6 +26,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
 @TeleOp(name = "Blue TeleOp", group = "Main")
 public class BlueTeleOp extends LinearOpMode {
@@ -55,6 +56,7 @@ public class BlueTeleOp extends LinearOpMode {
 
     // 1. ADD THIS TRACKING VARIABLE HERE:
     private boolean lastLeftBumper = false;
+    private Object opModeIsActive;
 
     @Override
     public void runOpMode() {
@@ -74,10 +76,10 @@ public class BlueTeleOp extends LinearOpMode {
 
         // --- Main loop ---
         while (opModeIsActive()) {
-
-            shooter.setVelocity(1350);
-            pinpoint.update ();
+            pinpoint.update();
             distanceToBlue1 = calcDistanceToBlue1();
+
+            shooter.setVelocity(getShooterVelocity(distanceToBlue1));
 
             if (gamepad1.b) {
                 resetHeading ();
@@ -176,17 +178,25 @@ public class BlueTeleOp extends LinearOpMode {
 
         // Sensors
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-//
-//        pinpoint.setOffsets ( -7.0, -5.625, DistanceUnit.INCH );
-//        pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.FORWARD,
-//                GoBildaPinpointDriver.EncoderDirection.FORWARD );
+
+        AprilTagLibrary aprilTagLibrary = new AprilTagLibrary.Builder()
+                .addTag(38, "Blue Target", 3.25, DistanceUnit.INCH)
+                .addTag(39, "Blue Target", 3.25, DistanceUnit.INCH)
+                .addTag(40, "Blue Target ", 3.25, DistanceUnit.INCH)
+                .addTag(42, "Blue Target", 3.25, DistanceUnit.INCH)
+                .addTag(43, "Blue Target", 3.25, DistanceUnit.INCH)
+                .addTag(44, "Blue Target", 3.25, DistanceUnit.INCH)
+                .addTag(45, "Blue Target", 3.25, DistanceUnit.INCH)
+                .build();
+
+
         pinpoint.setOffsets ( -5.25, 5.25, DistanceUnit.INCH );
        pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.REVERSED,
                 GoBildaPinpointDriver.EncoderDirection.REVERSED );
         pinpoint.setEncoderResolution ( GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD );
         pinpoint.resetPosAndIMU ();
         sleep(300); // let the IMU recalibrate while the robot sits still
-        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 132, 24, AngleUnit.DEGREES, 180)); // TUNE x, y
+        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 132, 24, AngleUnit.DEGREES, 180)); // TUNE. x, y
 
         // Sensors
 
@@ -252,6 +262,10 @@ public class BlueTeleOp extends LinearOpMode {
         double dx = BLUE1_X - pinpoint.getPosX(DistanceUnit.INCH);
         double dy = BLUE1_Y - pinpoint.getPosY(DistanceUnit.INCH);
         return Math.sqrt(dx * dx + dy * dy);
+    }
+    private double getShooterVelocity(double distance) {
+        double v = 1200 + (distance - 50) * (1600 - 1200) / (110 - 50);
+        return Math.max ( 1000, Math.min ( v, 1800 ) );
     }
 
     private double getRawHeading() {
