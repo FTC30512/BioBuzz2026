@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.TeleOp.Sensors;
+package org.firstinspires.ftc.teamcode.TestPrograms;
 
 import android.graphics.Color;
 
@@ -7,13 +7,10 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
 @TeleOp(name = "ColorSensorCount", group = "Test")
 public class ColorSensorCount extends LinearOpMode {
-
     private RevColorSensorV3 colorSensor;
     private int ballCount = 0;
-
     private final float[] hsv = new float[3];
     private boolean wasYellow = false;
     private final ElapsedTime debounceTimer = new ElapsedTime();
