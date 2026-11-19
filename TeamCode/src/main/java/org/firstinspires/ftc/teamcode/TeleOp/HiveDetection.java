@@ -26,7 +26,6 @@ public class HiveDetection extends LinearOpMode {
                 if (!llResult.getFiducialResults().isEmpty()) {
                     telemetry.addLine("=== TAG DETECTED ===");
                     telemetry.addData("Tags Visible", llResult.getFiducialResults().get(0).getFiducialId());
-
                 }
             } else {
                 if (getRuntime() >= 5) {

@@ -56,9 +56,9 @@ public class Blue1 extends LinearOpMode {
 
     private final Pose start = poseFactory.of(83, 132.5, 270);
     private final Pose shoot1 = poseFactory.of(114, 123, 235);
-    private final Pose blueGardenStart = poseFactory.of(120, 131.5, 0);
-    private final Pose blueGardenEnd = poseFactory.of(131, 131.5, 0);
-    private final Pose blueGardenEnd_shoot1CP = poseFactory.of(131,123, 0);
+    private final Pose blueGardenStart = poseFactory.of(120, 130, 0);
+    private final Pose blueGardenEnd = poseFactory.of(130, 130, 0);
+    private final Pose blueGardenEnd_shoot1CP = poseFactory.of(127.5,122.5, 0);
     //Shoot Other Side
     private final Pose shoot2 = poseFactory.of(114, 18, 125);
     private final Pose blueFlower1Start = poseFactory.of(94.5, 22.5, 270);
@@ -88,7 +88,7 @@ public class Blue1 extends LinearOpMode {
     public void shoot() {
         leftCR.setPower(-1);
         rightCR.setPower(1);
-        integration.setPower(1);
+        integration.setPower(-1);
     }
     public void doneExecute() {
         done_execute = true;
@@ -98,17 +98,17 @@ public class Blue1 extends LinearOpMode {
         return sequential(
                 instant(this::liftDolphin),
                 follow(follower, start_shoot1()),
-                //Shoot
+                // shoot
                 waitMs(1000),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
-                //Collect Garden
+                // collect Garden
                 follow(follower, shoot1_blueGardenStart()),
                 follow(follower, blueGardenStart_blueGardenEnd()),
-                //Get Ready to Shoot Again
+                // get ready to shoot again
                 follow(follower, blueGardenEnd_shoot1()),
-                //Check for hive tip
+                // check for hive tip
                 waitMs(1000),
                 instant(this::doneExecute),
                 waitMs(1000)
@@ -116,30 +116,31 @@ public class Blue1 extends LinearOpMode {
     }
     public Command ShootOtherSide() {
         return sequential(
-                //go to other side and shoot
+                // go to other side and shoot
                 follow(follower, shoot1_shoot2()),
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
-                // collect away flower
-                follow(follower, shoot2_blueFlower1Start()),
-                instant(this::lowerDolphin),
-                waitMs(LOWER_DOLPHIN_TIME_MS),
-                follow(follower, blueFlower1Start_blueFlower1End()),
-                waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, blueFlower1End_blueFlower1Start()),
-                instant(this::liftDolphin),
-                //shoot on other side again for second tip
-                follow(follower, blueFlower1Start_shoot2()),
-                instant(this::shoot),
-                waitMs(SHOOT_TIME_MS),
-                instant(this::dontShoot),
+//                // collect away flower
+//                follow(follower, shoot2_blueFlower1Start()),
+//                instant(this::lowerDolphin),
+//                waitMs(LOWER_DOLPHIN_TIME_MS),
+//                follow(follower, blueFlower1Start_blueFlower1End()),
+//                waitMs(COLLECT_FLOWER_TIME_MS),
+//                follow(follower, blueFlower1End_blueFlower1Start()),
+//                instant(this::liftDolphin),
+//                // shoot on other side again for second tip
+//                follow(follower, blueFlower1Start_shoot2()),
+//                instant(this::shoot),
+//                waitMs(SHOOT_TIME_MS),
+//                instant(this::dontShoot),
+                // park
                 follow(follower, shoot2_home())
         );
     }
     public Command ShootSameSide() {
         return sequential(
-                // Shoot on same side to tip hive
+                // shoot on same side to tip hive
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
@@ -156,19 +157,19 @@ public class Blue1 extends LinearOpMode {
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
-                // collect away flower
-                follow(follower, shoot2_blueFlower1Start()),
-                instant(this::lowerDolphin),
-                waitMs(LOWER_DOLPHIN_TIME_MS),
-                follow(follower, blueFlower1Start_blueFlower1End()),
-                waitMs(COLLECT_FLOWER_TIME_MS),
-                follow(follower, blueFlower1End_blueFlower1Start()),
-                instant(this::liftDolphin),
-                // awayShoot again
-                follow(follower, blueFlower1Start_shoot2()),
-                instant(this::shoot),
-                waitMs(SHOOT_TIME_MS),
-                instant(this::dontShoot),
+//                // collect away flower
+//                follow(follower, shoot2_blueFlower1Start()),
+//                instant(this::lowerDolphin),
+//                waitMs(LOWER_DOLPHIN_TIME_MS),
+//                follow(follower, blueFlower1Start_blueFlower1End()),
+//                waitMs(COLLECT_FLOWER_TIME_MS),
+//                follow(follower, blueFlower1End_blueFlower1Start()),
+//                instant(this::liftDolphin),
+//                // awayShoot again
+//                follow(follower, blueFlower1Start_shoot2()),
+//                instant(this::shoot),
+//                waitMs(SHOOT_TIME_MS),
+//                instant(this::dontShoot),
                 // park
                 follow(follower, shoot2_home())
         );

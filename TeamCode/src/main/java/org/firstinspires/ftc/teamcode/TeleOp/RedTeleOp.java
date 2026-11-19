@@ -5,7 +5,7 @@
 // gamepad1.right_trigger = shoot
 // gamepad1.left_bumper = lower/lift dolphin flap (toggle)
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -23,12 +23,9 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
-@TeleOp(name = "EW TeleOp", group = "Main")
-public class EWTeleOp extends LinearOpMode {
+@TeleOp(name = "Red TeleOp", group = "Main")
+public class RedTeleOp extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     // --- Motors ---
     private DcMotor leftFront, leftRear, rightFront, rightRear, intake, integration;
@@ -36,12 +33,17 @@ public class EWTeleOp extends LinearOpMode {
     private CRServo leftCR, rightCR;
     private Servo leftDolphin, rightDolphin;
 
-    // --- Sensors ---
     private GoBildaPinpointDriver pinpoint;
+    Limelight3A limelight;
+    private LLResult llResult;
+    private boolean isTurning = false;
+    private double actYaw = 0;
+    private double maxTurnSpeed = 0.5;
     // --- Helper Classes ---
     private Movement movement;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private boolean is_lowered = false;
+    private double tag_offset = 0;
 
     // 1. ADD THIS TRACKING VARIABLE HERE:
     private boolean lastLeftBumper = false;
@@ -51,9 +53,7 @@ public class EWTeleOp extends LinearOpMode {
 
         // --- Initialize hardware ---
         initHardware();
-
         liftDolphin();
-
         // --- Initialize helpers ---
         movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint, telemetry);
 
@@ -66,7 +66,7 @@ public class EWTeleOp extends LinearOpMode {
         // --- Main loop ---
         while (opModeIsActive()) {
 
-            shooter.setVelocity(1375);
+            shooter.setVelocity(1350);
             pinpoint.update ();
 
             if (gamepad1.b) {
@@ -88,6 +88,7 @@ public class EWTeleOp extends LinearOpMode {
             movement.drive( pinpoint.getHeading (AngleUnit.RADIANS) );
 
             if (gamepad1.right_trigger > 0.5){
+                isTurning = true;
                 shoot();
             }
             else{
@@ -106,10 +107,25 @@ public class EWTeleOp extends LinearOpMode {
                 }
             }
             lastLeftBumper = currentLeftBumper; // Save state for the next loop iteration
+            double currentHeading = getHeading();
+            limelight.updateRobotOrientation(getRawHeading());
+            llResult = limelight.getLatestResult();
+            if (llResult != null && llResult.isValid()){
+                telemetry.addData("Tx", llResult.getTx());
+                telemetry.addData("Ty", llResult.getTy());
+                telemetry.addData("Ta", llResult.getTa());
+                telemetry.addLine("Current Heading angle" + getHeading());
+                telemetry.addLine("pinpoint angle" + pinpoint.getHeading(AngleUnit.DEGREES));
 
-
+                telemetry.update();
+            }
             // --- Telemetry ---
-            telemetry.addData ( "pinpoint heading: ", pinpoint.getHeading ( AngleUnit.DEGREES ) );
+//            telemetry.addData("Actual Yaw: ", actYaw);
+//            telemetry.addData("Tx: ", llResult.getTx());
+//            telemetry.addData("Valid: ", llResult.isValid());
+//            telemetry.addData("Null: ", llResult!=null);
+//            telemetry.addData("is turning: ", isTurning);
+//            telemetry.addData ( "pinpoint heading: ", pinpoint.getHeading ( AngleUnit.DEGREES ) );
             telemetry.update ();
         }
     }
@@ -154,6 +170,10 @@ public class EWTeleOp extends LinearOpMode {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
 
+        limelight = hardwareMap.get ( Limelight3A.class, "limelight" );
+        limelight.pipelineSwitch(2);
+        limelight.start();
+
         runtime.reset();
     }
     public void lowerDolphin(){
@@ -168,11 +188,76 @@ public class EWTeleOp extends LinearOpMode {
     }
     // --- Shooting method ---
     public void shoot() {
-        leftCR.setPower(-1);
-        rightCR.setPower(1);
-        integration.setPower(1);
+        if (llResult != null && llResult.isValid()) {
+            telemetry.addLine("April Tag Detected");
+            pid_turn_by_gyro(llResult.getTx() + tag_offset);
+        }
+        else {
+            telemetry.addLine("April Tag NOT Detected!!!");
+            isTurning = false;
+        }
+
+        if(!isTurning) {
+            leftCR.setPower(-1);
+            rightCR.setPower(1);
+            integration.setPower(-1);
+        }
+        else{
+            leftCR.setPower(0);
+            rightCR.setPower(0);
+            integration.setPower(0);
+        }
+    }
+    private double getHeading() {
+        double angle = getRawHeading();
+        if (angle > 180) angle -= 360;
+        if (angle < -180) angle += 360;
+        return angle;
     }
 
+    private double getRawHeading() {
+        return pinpoint.getHeading ( AngleUnit.DEGREES );
+    }
+
+    public void pid_turn_by_gyro(double targetYaw){
+
+        if (isTurning) {
+            double error = -targetYaw;
+
+            if (Math.abs(error) > 1) {
+                double kp = 0.02;
+                double power = error * kp;
+
+                // Bound the power limits smoothly
+                if (power > 0) {
+                    power = Math.min(Math.max(power, 0.125), maxTurnSpeed);
+                } else {
+                    power = Math.min(Math.max(power, -maxTurnSpeed), -0.125);
+                }
+//
+//                telemetry.addData("Tx", llResult.getTx());
+//                telemetry.addData("Ty", llResult.getTy());
+//                telemetry.addData("Ta", llResult.getTa());
+//                telemetry.addData("Target Angle", actYaw);
+//                telemetry.addData("Actual Power", power);
+
+                // Uncomment this to make the wheels physically move:
+                setDrivePower(-power, -power, power, power);
+            } else {
+                // Target reached
+                setDrivePower(0, 0, 0, 0);
+                isTurning = false;
+            }
+        }
+
+    }
+    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
+    {
+        leftFront.setPower(lfPower);
+        leftRear.setPower(lrPower);
+        rightFront.setPower(rfPower);
+        rightRear.setPower(rrPower);
+    }
     public void resetHeading() {
         pinpoint.resetPosAndIMU ();
     }

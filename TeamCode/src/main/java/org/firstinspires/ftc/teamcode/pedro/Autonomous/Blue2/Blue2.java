@@ -96,7 +96,7 @@ public class Blue2 extends LinearOpMode {
         }
     }
     // Autonomous Routines
-    public Command Start() {
+    public Command autoRoutine() {
         return sequential(
                 //prepare to shoot
                 follow(follower, start_shoot2()),
@@ -152,7 +152,7 @@ public class Blue2 extends LinearOpMode {
 
         waitForStart();
         resetRuntime();
-        schedule(Start());
+        schedule(autoRoutine());
 
         while (opModeIsActive()) {
             llResult = limelight.getLatestResult();
