@@ -11,8 +11,8 @@ public class DistanceSensorCount extends LinearOpMode {
     private DigitalChannel ledPin1;
     private DigitalChannel ledPin2;
 
-    private int ballCount = -1;
-    private boolean previousDetected = false;
+    private int ballCount = 0;
+    private boolean previousSensorState = false;
 
     @Override
     public void runOpMode() {
@@ -30,25 +30,24 @@ public class DistanceSensorCount extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            boolean currentDetected = !intakeSensor.getState();
-
-            if (currentDetected && !previousDetected) {
+            boolean rawSensorState = intakeSensor.getState();
+            if (previousSensorState && !rawSensorState) {
                 ballCount++;
             }
-            previousDetected = currentDetected;
+            previousSensorState = rawSensorState;
 
             if (ballCount < 4) {
-                // Yellow (< 4)
+                // Off
+                ledPin1.setState(true);
+                ledPin2.setState(true);
+            } else if (ballCount == 4) {
+                // Yellow
                 ledPin1.setState(true);
                 ledPin2.setState(false);
-            } else if (ballCount == 4) {
-                // Green (= 4)
+            } else {
+                // Red
                 ledPin1.setState(false);
                 ledPin2.setState(true);
-            } else {
-                // Red (> 4)
-                ledPin1.setState(false);
-                ledPin2.setState(false);
             }
 
             telemetry.addData("Ball Count", ballCount);
