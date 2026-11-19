@@ -34,7 +34,6 @@ public class RunAuto extends LinearOpMode {
     private Follower follower;
     private Limelight3A limelight;
     private LLResult llResult;
-
     private DcMotor intake, integration;
     private DcMotorEx shooter;
     private CRServo leftCR, rightCR;
@@ -182,7 +181,7 @@ public class RunAuto extends LinearOpMode {
             } else {
                 telemetry.addLine("No AprilTag detected – defaulting to Tag 1");
             }
-            telemetry.addData("Selected Routine", selectedTag == 2 ? "Task 2" : "Action 1");
+            telemetry.addData("Selected Routine", selectedTag == 2 ? "Task 2" : "Task 1");
             telemetry.update();
         }
 
