@@ -21,6 +21,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
@@ -41,6 +42,9 @@ public class BlueRed1 extends LinearOpMode {
     private final double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private static final long SHOOT_TIME_MS = 3000;
     private static final long COLLECT_FLOWER_TIME_MS = 3000;
+
+    private final ElapsedTime matchTimer = new ElapsedTime();
+    private boolean forceParked = false;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
@@ -111,7 +115,6 @@ public class BlueRed1 extends LinearOpMode {
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
                 instant(this::dontShoot),
-                // End  Shoot routine and go to Park
                 follow(follower, park())
         );
     }
@@ -135,9 +138,16 @@ public class BlueRed1 extends LinearOpMode {
         integration = hardwareMap.get(DcMotor.class, "Integration");
 
         waitForStart();
+        matchTimer.reset();
         schedule(autoRoutine());
 
         while (opModeIsActive()) {
+
+            if (!forceParked && matchTimer.seconds() >= 25.0) {
+                Scheduler.reset();
+                schedule(follow(follower, park()));
+                forceParked = true;
+            }
 
             intake.setPower(-1);
             shooter.setVelocity(SHOOTER_VELOCITY);
@@ -186,9 +196,9 @@ public class BlueRed1 extends LinearOpMode {
     }
 
     //public Path shoot3() {
-        //return line(collectFlower, shoot3).linear(collectFlower, shoot3);
+    //return line(collectFlower, shoot3).linear(collectFlower, shoot3);
     //}
     public Path park() {
-        return line(shoot3, park).linear(shoot3, park);
+        return line(park, park).linear(park, park);
     }
 }
