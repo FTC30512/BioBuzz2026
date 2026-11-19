@@ -1,105 +1,136 @@
-//Controls:
-// gamepad1.b = resetYaw/resetHeading
+// Controls:
+// gamepad1.b = resetHeading (software offset, safe mid-match)
 // gamepad1.y = reverse intake
 // gamepad1.dpad_up = turn off intake
-// gamepad1.right_trigger = shoot
+// gamepad1.right_trigger = auto-aim then shoot
 // gamepad1.left_bumper = lower/lift dolphin flap (toggle)
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
-
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @TeleOp(name = "Blue TeleOp", group = "Main")
 public class BlueTeleOp extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
-    // --- Motors ---
+
+    // --- Motors & Servos ---
     private DcMotor leftFront, leftRear, rightFront, rightRear, intake, integration;
     private DcMotorEx shooter;
     private CRServo leftCR, rightCR;
     private Servo leftDolphin, rightDolphin;
-    private IMU imu;
+
+    // --- Sensors ---
     private GoBildaPinpointDriver pinpoint;
-    Limelight3A limelight;
+    private Limelight3A limelight;
     private LLResult llResult;
-    private boolean isTurning = false;
-    private double actYaw = 0;
-    private double maxTurnSpeed = 0.5;
+
     // --- Helper Classes ---
     private Movement movement;
+
+    // --- Heading Offset ---
+    private double headingOffsetDeg = 0.0;
+
+    // --- Shooter & Dolphin Variables ---
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private boolean is_lowered = false;
     private double tag_offset = 0;
-
-    // 1. ADD THIS TRACKING VARIABLE HERE:
     private boolean lastLeftBumper = false;
+
+    // --- Auto-Aim & Shoot State Machine ---
+    private enum ShootState {
+        IDLE,
+        AIMING,
+        SHOOTING
+    }
+
+    private ShootState shootState = ShootState.IDLE;
+    private double targetHeadingDeg = 0;
+    private double lastTurnError = 0;
+    private ElapsedTime aimTimer = new ElapsedTime();
+    private ElapsedTime settleTimer = new ElapsedTime();
+
+    // --- Turning PD Constants ---
+    private static final double TURN_KP = 0.028;        // Snap speed toward target
+    private static final double TURN_KD = 0.0025;       // Damping to prevent overshoot/oscillation
+    private static final double MIN_TURN_POWER = 0.1;  // Minimum power to overcome static friction
+    private static final double MAX_TURN_POWER = 0.65;  // Maximum turn speed
+    private static final double AIM_TOLERANCE_DEG = 2;
 
     @Override
     public void runOpMode() {
-
         // --- Initialize hardware ---
         initHardware();
         liftDolphin();
-        // --- Initialize helpers ---
-        movement = new Movement(leftFront, leftRear, rightFront, rightRear, intake, gamepad1, pinpoint, telemetry);
 
+        // --- Initialize helpers ---
+        movement = new Movement(leftFront, leftRear, rightFront, rightRear, gamepad1, telemetry);
+
+        telemetry.addData("Pinpoint Status", pinpoint.getDeviceStatus());
         telemetry.addLine("Initialized. Press PLAY to start.");
         telemetry.update();
         gamepad1.rumble(500);
+        double ta;
+        double shooter_speed=1350;
 
         waitForStart();
 
         // --- Main loop ---
         while (opModeIsActive()) {
+            shooter_speed = 1350;
 
-            shooter.setVelocity(1350);
-            pinpoint.update ();
+
+            shooter.setVelocity(shooter_speed);
+            pinpoint.update();
 
             if (gamepad1.b) {
-                resetHeading ();
+                resetHeading();
             }
-//             --- Intake ---
-            if (gamepad1.y)
-            {
-                intake.setPower ( -1 );
-            }else{
+
+            // --- Intake ---
+            if (gamepad1.y) {
+                intake.setPower(-1);
+            } else {
                 intake.setPower(1);
             }
 
-            if (gamepad1.dpad_up){
+            if (gamepad1.dpad_up) {
                 intake.setPower(0);
             }
 
-            // --- Driving ---
-            movement.drive( pinpoint.getHeading (AngleUnit.RADIANS) );
+            // --- Limelight Update ---
+            limelight.updateRobotOrientation(getRawHeading());
+            llResult = limelight.getLatestResult();
 
-            if (gamepad1.right_trigger > 0.5){
-                isTurning = true;
-                shoot();
-            }
-            else{
+            // --- Driving & Auto-Aim/Shoot ---
+            boolean triggerPressed = gamepad1.right_trigger > 0.5;
+
+            if (triggerPressed) {
+                handleAutoAimAndShoot();
+            } else {
+                shootState = ShootState.IDLE;
                 leftCR.setPower(0);
                 rightCR.setPower(0);
                 integration.setPower(0);
+
+                // Only allow manual driving when not auto-aiming/shooting
+                movement.drive(Math.toRadians(getHeading()));
             }
 
-            // 2. REPLACE YOUR OLD left_bumper CHECK WITH THIS:
+            // --- Dolphin Flap Toggle ---
             boolean currentLeftBumper = gamepad1.left_bumper;
             if (currentLeftBumper && !lastLeftBumper) {
                 if (is_lowered) {
@@ -108,37 +139,27 @@ public class BlueTeleOp extends LinearOpMode {
                     lowerDolphin();
                 }
             }
-            lastLeftBumper = currentLeftBumper; // Save state for the next loop iteration
-            double currentHeading = getHeading();
-            limelight.updateRobotOrientation(getRawHeading());
-            llResult = limelight.getLatestResult();
-            if (llResult != null && llResult.isValid()){
-                telemetry.addData("Tx", llResult.getTx());
-                telemetry.addData("Ty", llResult.getTy());
-                telemetry.addData("Ta", llResult.getTa());
-                telemetry.addLine("Current Heading angle" + getHeading());
-                telemetry.addLine("pinpoint angle" + pinpoint.getHeading(AngleUnit.DEGREES));
+            lastLeftBumper = currentLeftBumper;
 
-                telemetry.update();
-            }
             // --- Telemetry ---
-//            telemetry.addData("Actual Yaw: ", actYaw);
-//            telemetry.addData("Tx: ", llResult.getTx());
-//            telemetry.addData("Valid: ", llResult.isValid());
-//            telemetry.addData("Null: ", llResult!=null);
-//            telemetry.addData("is turning: ", isTurning);
-//            telemetry.addData ( "pinpoint heading: ", pinpoint.getHeading ( AngleUnit.DEGREES ) );
-
-            telemetry.update ();
-//            telemetry.addData("Pinpoint Heading: ", pinpoint.getHeading(AngleUnit.DEGREES));
-//            telemetry.addData("imu heading: ", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
-//            telemetry.update();
+            telemetry.addData("Pinpoint Status", pinpoint.getDeviceStatus());
+            telemetry.addData("Shoot State", shootState);
+            telemetry.addData("Current Heading", String.format("%.2f", getHeading()));
+            telemetry.addData("Target Heading", String.format("%.2f", targetHeadingDeg));
+            if (llResult != null && llResult.isValid()) {
+                telemetry.addData("Tag Detected", true);
+                telemetry.addData("Tx", String.format("%.2f", llResult.getTx()));
+                telemetry.addData("Ty", String.format("%.2f", llResult.getTy()));
+                telemetry.addData("Ta", String.format("%.2f", llResult.getTa()));
+            } else {
+                telemetry.addData("Tag Detected", false);
+            }
+            telemetry.update();
         }
     }
 
     // --- Hardware initialization method ---
     private void initHardware() {
-        // Motors
         leftFront = hardwareMap.dcMotor.get("leftFront");
         leftRear = hardwareMap.dcMotor.get("leftRear");
         rightFront = hardwareMap.dcMotor.get("rightFront");
@@ -154,7 +175,6 @@ public class BlueTeleOp extends LinearOpMode {
         rightDolphin = hardwareMap.get(Servo.class, "rightDolphin");
         leftDolphin.setDirection(Servo.Direction.REVERSE);
 
-
         shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
 
         leftFront.setDirection(DcMotor.Direction.REVERSE);
@@ -163,121 +183,137 @@ public class BlueTeleOp extends LinearOpMode {
         shooter.setDirection(DcMotorSimple.Direction.REVERSE);
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        // Sensors
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-
-        pinpoint.setOffsets ( -7.0, -5.625, DistanceUnit.INCH );
-        pinpoint.setEncoderDirections ( GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                GoBildaPinpointDriver.EncoderDirection.FORWARD );
-        pinpoint.setEncoderResolution ( GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD );
-        pinpoint.resetPosAndIMU ();
-
-        // Sensors
-
-//        imu = hardwareMap.get(IMU.class, "imu");
-//
-//        IMU.Parameters parameters = new IMU.Parameters(
-//                new RevHubOrientationOnRobot(
-//                        RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
-//                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
-//                )
-//        );
-//        imu.initialize(parameters);
-
         for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            m.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
 
-        limelight = hardwareMap.get ( Limelight3A.class, "limelight" );
+        // Pinpoint Odometry
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+        pinpoint.setOffsets(-7.0, -5.625, DistanceUnit.INCH);
+        pinpoint.setEncoderDirections(
+                GoBildaPinpointDriver.EncoderDirection.FORWARD,
+                GoBildaPinpointDriver.EncoderDirection.FORWARD
+        );
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        pinpoint.resetPosAndIMU();
+
+        ElapsedTime calibTimer = new ElapsedTime();
+        while (!isStopRequested() && calibTimer.seconds() < 1.0) {
+            pinpoint.update();
+            if (pinpoint.getDeviceStatus() == GoBildaPinpointDriver.DeviceStatus.READY) {
+                break;
+            }
+            sleep(20);
+        }
+
+        headingOffsetDeg = pinpoint.getHeading(AngleUnit.DEGREES);
+
+        // Limelight
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.pipelineSwitch(1);
         limelight.start();
 
         runtime.reset();
     }
-    public void lowerDolphin(){
+
+    public void lowerDolphin() {
         leftDolphin.setPosition(0.535);
         rightDolphin.setPosition(0.55);
         is_lowered = true;
     }
-    public void liftDolphin(){
+
+    public void liftDolphin() {
         leftDolphin.setPosition(0.1);
         rightDolphin.setPosition(0.1);
         is_lowered = false;
     }
-    // --- Shooting method ---
-    public void shoot() {
-        if (llResult != null && llResult.isValid()) {
-            telemetry.addLine("April Tag Detected");
-            pid_turn_by_gyro(llResult.getTx() + tag_offset);
-        }
-        else {
-            telemetry.addLine("April Tag NOT Detected!!!");
-            isTurning = false;
-        }
 
-        if(!isTurning) {
-            leftCR.setPower(-1);
-            rightCR.setPower(1);
-            integration.setPower(1);
-        }
-        else{
-            leftCR.setPower(0);
-            rightCR.setPower(0);
-            integration.setPower(0);
+    // --- Aim First, Then Shoot ---
+    private void handleAutoAimAndShoot() {
+        switch (shootState) {
+            case IDLE:
+                if (llResult != null && llResult.isValid()) {
+                    // Snapshot target heading using Pinpoint + Limelight Tx
+                    // NOTE: If robot turns away from the tag, change '-' to '+' below
+                    targetHeadingDeg = normalizeAngle(getHeading() - (llResult.getTx() + tag_offset));
+                    lastTurnError = getHeadingError(targetHeadingDeg);
+                    aimTimer.reset();
+                    settleTimer.reset();
+                    shootState = ShootState.AIMING;
+                } else {
+                    // No AprilTag visible: stop wheels and fire immediately
+                    setDrivePower(0, 0, 0, 0);
+                    shootState = ShootState.SHOOTING;
+                }
+                break;
+
+            case AIMING:
+                double error = getHeadingError(targetHeadingDeg);
+                double derivative = error - lastTurnError;
+                lastTurnError = error;
+
+                if (Math.abs(error) <= AIM_TOLERANCE_DEG) {
+                    setDrivePower(0, 0, 0, 0);
+                    // Wait 80ms settled on target before feeding shooter
+                    if (settleTimer.milliseconds() > 80) {
+                        shootState = ShootState.SHOOTING;
+                    }
+                } else {
+                    settleTimer.reset();
+                    double power = (error * TURN_KP) + (derivative * TURN_KD);
+
+                    if (power > 0) {
+                        power = Math.min(Math.max(power, MIN_TURN_POWER), MAX_TURN_POWER);
+                    } else {
+                        power = Math.max(Math.min(power, -MIN_TURN_POWER), -MAX_TURN_POWER);
+                    }
+
+                    setDrivePower(-power, -power, power, power);
+                }
+
+                // Safety timeout (1.2s) so robot always shoots even if blocked
+                if (aimTimer.seconds() > 1.2) {
+                    setDrivePower(0, 0, 0, 0);
+                    shootState = ShootState.SHOOTING;
+                }
+                break;
+
+            case SHOOTING:
+                setDrivePower(0, 0, 0, 0);
+                leftCR.setPower(-1);
+                rightCR.setPower(1);
+                integration.setPower(1);
+                break;
         }
     }
-    private double getHeading() {
-        double angle = getRawHeading();
-        if (angle > 180) angle -= 360;
-        if (angle < -180) angle += 360;
+
+    private double getHeadingError(double targetDeg) {
+        return normalizeAngle(targetDeg - getHeading());
+    }
+
+    private double normalizeAngle(double angle) {
+        while (angle > 180) angle -= 360;
+        while (angle < -180) angle += 360;
         return angle;
     }
 
+    private double getHeading() {
+        return normalizeAngle(pinpoint.getHeading(AngleUnit.DEGREES) - headingOffsetDeg);
+    }
+
     private double getRawHeading() {
-        return pinpoint.getHeading ( AngleUnit.DEGREES );
+        return normalizeAngle(pinpoint.getHeading(AngleUnit.DEGREES));
     }
 
-    public void pid_turn_by_gyro(double targetYaw){
-
-        if (isTurning) {
-            double error = -targetYaw;
-
-            if (Math.abs(error) > 1) {
-                double kp = 0.02;
-                double power = error * kp;
-
-                // Bound the power limits smoothly
-                if (power > 0) {
-                    power = Math.min(Math.max(power, 0.125), maxTurnSpeed);
-                } else {
-                    power = Math.min(Math.max(power, -maxTurnSpeed), -0.125);
-                }
-//
-//                telemetry.addData("Tx", llResult.getTx());
-//                telemetry.addData("Ty", llResult.getTy());
-//                telemetry.addData("Ta", llResult.getTa());
-//                telemetry.addData("Target Angle", actYaw);
-//                telemetry.addData("Actual Power", power);
-
-                // Uncomment this to make the wheels physically move:
-                setDrivePower(-power, -power, power, power);
-            } else {
-                // Target reached
-                setDrivePower(0, 0, 0, 0);
-                isTurning = false;
-            }
-        }
-
-    }
-    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
-    {
+    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower) {
         leftFront.setPower(lfPower);
         leftRear.setPower(lrPower);
         rightFront.setPower(rfPower);
         rightRear.setPower(rrPower);
     }
+
     public void resetHeading() {
-        pinpoint.resetPosAndIMU ();
-        //imu.resetYaw();
+        headingOffsetDeg = pinpoint.getHeading(AngleUnit.DEGREES);
     }
 }
