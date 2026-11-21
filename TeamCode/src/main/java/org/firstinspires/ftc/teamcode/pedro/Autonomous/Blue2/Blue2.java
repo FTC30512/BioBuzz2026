@@ -29,11 +29,11 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 @Autonomous(name = "Blue2", group = "Blue2")
 public class Blue2 extends LinearOpMode {
-
     private Follower follower;
-
     //Limelight
     private IMU imu;
     private GoBildaPinpointDriver pinpoint;
@@ -51,17 +51,28 @@ public class Blue2 extends LinearOpMode {
     private static final long COLLECT_FLOWER_TIME_MS = 3000;
     private static final long LOWER_DOLPHIN_TIME_MS = 1000;
     private boolean hiveTipped = false;
+    private boolean done_execute = false;
+    private boolean done_auto = false;
+    private boolean position1 = false;
+
+    private Pose currentPose;
+    private final ElapsedTime matchTimer = new ElapsedTime();
+    private boolean forceParked = false;
     //Poses
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(81, 9, 90);
-    private final Pose shoot2 = poseFactory.of(114, 18, 125);
+    private final Pose start = poseFactory.of(84, 9, 90);
+    private final Pose shoot1 = poseFactory.of(84, 123, 270);
+    private final Pose shoot2 = poseFactory.of(84, 18, 90);
     private final Pose start_shoot2CP = poseFactory.of(78.889, 24.6596, 0);
     private final Pose blueFlower1Start = poseFactory.of(94.5, 22.5, 270);
     private final Pose blueFlower1End = poseFactory.of(94.5, 15.5, 270);
     private final Pose home = poseFactory.of(131, 46, 180);
+    private final Pose midwaygoinghome = poseFactory.of(84, 54, 270);
+    private final Pose midwaypoint_homeCP = poseFactory.of(80, 16, 0);
     private final Pose shoot2_homeCP = poseFactory.of(114, 44, 0);
 
+    private void doneAuto(){ done_auto = true;}
     // Commands
     private void dontShoot() {
         leftCR.setPower(0);
@@ -88,6 +99,7 @@ public class Blue2 extends LinearOpMode {
     public void waitForTip() {
         hiveTipped = false;
         while (!hiveTipped) {
+            llResult = limelight.getLatestResult();
             if (llResult != null && llResult.isValid()) {
                 if (!llResult.getFiducialResults().isEmpty()) {
                     hiveTipped = true;
@@ -95,8 +107,32 @@ public class Blue2 extends LinearOpMode {
             }
         }
     }
+    public Command ShootAtPosition(){
+        //Just Shoot
+        return sequential(
+                instant(this::shoot),
+                waitMs(SHOOT_TIME_MS),
+                instant(this::dontShoot),
+                instant(this::doneAuto),
+                instant(this::doneExecute)
+        );
+    }
+    public Command ShootPosition1() {
+        return sequential(
+                // shoot on same side to tip hive
+                follow(follower, goToShoot1()),
+                instant(this::shoot),
+                waitMs(SHOOT_TIME_MS),
+                instant(this::dontShoot),
+                instant(this::doneAuto),
+                instant(this::doneExecute)
+        );
+    }
+    public void doneExecute() {
+        done_execute = true;
+    }
     // Autonomous Routines
-    public Command autoRoutine() {
+    public Command Start() {
         return sequential(
                 //prepare to shoot
                 follow(follower, start_shoot2()),
@@ -115,6 +151,11 @@ public class Blue2 extends LinearOpMode {
                 instant(this::liftDolphin),
                 //return to shoot position
                 follow(follower, blueFlower1Start_shoot2()),
+                instant(this::doneExecute)
+        );
+    }
+    public Command ShootAndGoHome(){
+        return sequential(
                 //shoot
                 instant(this::shoot),
                 waitMs(SHOOT_TIME_MS),
@@ -123,12 +164,20 @@ public class Blue2 extends LinearOpMode {
                 follow(follower, shoot2_home())
         );
     }
+    public Command Shoot1ToHome(){
+        return sequential(
+                //shoot
+                follow(follower, shoot1_midway()),
+                //return to shoot position
+                follow(follower, midway_home())
+        );
+    }
 
     @Override
     public void runOpMode() {
         Scheduler.reset();
 
-        Limelight3A limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.pipelineSwitch(1);
         limelight.start();
 
@@ -152,25 +201,56 @@ public class Blue2 extends LinearOpMode {
 
         waitForStart();
         resetRuntime();
-        schedule(autoRoutine());
+        schedule(Start());
 
         while (opModeIsActive()) {
             llResult = limelight.getLatestResult();
-            telemetry.addLine("Runtime: " + getRuntime());
+            currentPose = follower.pose();
+//            telemetry.addLine("Runtime: " + getRuntime());
             intake.setPower(-1);
             shooter.setVelocity(SHOOTER_VELOCITY);
 
             follower.update();
             Scheduler.execute();
+            telemetry.addLine("Still executing the Start");
 
-            telemetry.addData("x", follower.pose().x());
-            telemetry.addData("y", follower.pose().y());
-            telemetry.addData("heading", follower.pose().heading());
-
-            if (follower.currentPath() != null) {
-                telemetry.addData("Current path distance remaining", follower.distanceToEndpoint());
-                telemetry.addData("Path number", follower.pathIndex());
+            if ((!forceParked && matchTimer.seconds() >= 25.0) || done_auto) {
+                Scheduler.reset();
+                if(position1)
+                {
+                    Scheduler.schedule(Shoot1ToHome());
+                }
+                else{
+                    schedule(follow(follower, shoot2_home()));
+                }
+                telemetry.update();
+                telemetry.addLine("GOING to PARK");
+                forceParked = true;
+                done_execute = false;
             }
+
+            if (done_execute) {
+                telemetry.update();
+                done_execute = false;
+                telemetry.addLine("Loaded");
+                if (llResult != null && llResult.isValid() && !llResult.getFiducialResults().isEmpty()) {
+                    telemetry.addLine("Hive Tip Identified");
+                    Scheduler.schedule(ShootAtPosition());
+                } else {
+                    telemetry.addLine("Hive Tip Identified");
+                    telemetry.addLine("Going to Hive 1");
+                    Scheduler.schedule(ShootPosition1());
+                }
+            }
+//
+//            telemetry.addData("x", follower.pose().x());
+//            telemetry.addData("y", follower.pose().y());
+//            telemetry.addData("heading", follower.pose().heading());
+//
+//            if (follower.currentPath() != null) {
+//                telemetry.addData("Current path distance remaining", follower.distanceToEndpoint());
+//                telemetry.addData("Path number", follower.pathIndex());
+//            }
             telemetry.update();
         }
     }
@@ -179,7 +259,6 @@ public class Blue2 extends LinearOpMode {
     public Path start_shoot2() {
         return Paths.curve(start, start_shoot2CP, shoot2).linear(start, shoot2);
     }
-
     public Path shoot2_blueFlower1Start() {
         return Paths.line(shoot2, blueFlower1Start).linear(shoot2, blueFlower1Start);
     }
@@ -194,5 +273,15 @@ public class Blue2 extends LinearOpMode {
     }
     public Path shoot2_home() {
         return Paths.curve(shoot2, shoot2_homeCP, home).linear(shoot2, home);
+    }
+    public Path shoot1_midway(){
+        return Paths.line(shoot1, midwaygoinghome).linear(shoot1, midwaygoinghome);
+    }
+    public Path midway_home(){
+        return Paths.curve(midwaygoinghome, midwaypoint_homeCP, home).linear(midwaygoinghome, home);
+    }
+    public Path goToShoot1(){
+        position1 = true;
+        return Paths.line(currentPose, shoot1).linear(currentPose, shoot1);
     }
 }
