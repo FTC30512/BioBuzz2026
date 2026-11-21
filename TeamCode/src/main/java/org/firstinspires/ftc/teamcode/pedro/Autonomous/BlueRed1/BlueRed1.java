@@ -62,6 +62,8 @@ public class BlueRed1 extends LinearOpMode {
     private final Pose park = poseFactory.of(132.2288, 44.9007, 180);
     private final Pose park2 = poseFactory.of(132, 24, 180);
 
+    private Pose robotPos = poseFactory.of(0,0,0);
+
     // Commands
     private void dontShoot() {
         leftCR.setPower(0);
@@ -121,6 +123,7 @@ public class BlueRed1 extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+
         Scheduler.reset();
         follower = Constants.create(hardwareMap);
         follower.setPose(start);
@@ -142,11 +145,15 @@ public class BlueRed1 extends LinearOpMode {
         schedule(autoRoutine());
 
         while (opModeIsActive()) {
+            if (follower != null) {
+                robotPos = poseFactory.of(follower.pose().x(), follower.pose().y(), follower.pose().heading());
+            }
 
-            if (!forceParked && matchTimer.seconds() >= 25.0) {
+            if (!forceParked && matchTimer.seconds() >= 5.0) {
                 Scheduler.reset();
                 schedule(follow(follower, park()));
                 forceParked = true;
+                autoRoutine().cancel();
             }
 
             intake.setPower(-1);
@@ -158,6 +165,7 @@ public class BlueRed1 extends LinearOpMode {
             telemetry.addData("x", follower.pose().x());
             telemetry.addData("y", follower.pose().y());
             telemetry.addData("heading", follower.pose().heading());
+            telemetry.addData("forcedPark", forceParked);
 
             if (follower.currentPath() != null) {
                 telemetry.addData("Current path distance remaining", follower.distanceToEndpoint());
@@ -199,6 +207,6 @@ public class BlueRed1 extends LinearOpMode {
     //return line(collectFlower, shoot3).linear(collectFlower, shoot3);
     //}
     public Path park() {
-        return line(park, park).linear(park, park);
+        return line(robotPos, park).linear(robotPos, park);
     }
 }
