@@ -33,11 +33,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Autonomous(name = "Blue1", group = "Blue1")
 public class Blue1 extends LinearOpMode {
-
     private Follower follower;
-
     Pose currentPose;
-
     //Limelight
     private IMU imu;
     private GoBildaPinpointDriver pinpoint;
@@ -55,7 +52,6 @@ public class Blue1 extends LinearOpMode {
     private static final long COLLECT_FLOWER_TIME_MS = 3000;
     private static final long LOWER_DOLPHIN_TIME_MS = 1000;
     private final ElapsedTime matchTimer = new ElapsedTime();
-
     private boolean hive1_up = false;
     private boolean hive2_up = false;
     private boolean done_execute = false;
@@ -64,7 +60,6 @@ public class Blue1 extends LinearOpMode {
     private boolean forceParked = false;
     //Poses
     private final PoseFactory poseFactory = PoseFactory.degrees();
-
     private final Pose start = poseFactory.of(83, 132.5, 270);
     private final Pose shoot1 = poseFactory.of(114, 123, 235);
     private final Pose blueGardenStart = poseFactory.of(119, 130, 0);
@@ -103,9 +98,7 @@ public class Blue1 extends LinearOpMode {
         rightCR.setPower(1);
         integration.setPower(-1);
     }
-    public void doneExecute() {
-        done_execute = true;
-    }
+    public void doneExecute() {done_execute = true;}
     public void doneShooting(){loaded = false;}
     public void doneCollecting(){loaded = true;}
     // Autonomous Routines

@@ -26,11 +26,15 @@ public class Tuning {
 
     @Tuner
     public static Procedure foresightTuner() {
+        if(Constants.ROBOT_CONFIGURATION == "test1")
+            return new ForesightTuner((hardwareMap) -> new PinpointLocalizer(hardwareMap, Constants.test_localizerConfig), (hardwareMap) -> new Mecanum(hardwareMap, Constants.test_drivetrainConfig));
         return new ForesightTuner((hardwareMap) -> new PinpointLocalizer(hardwareMap, Constants.localizerConfig), (hardwareMap) -> new Mecanum(hardwareMap, Constants.drivetrainConfig));
     }
 
     @Tuner
     public static Procedure tests() {
+        if (Constants.ROBOT_CONFIGURATION == "test1")
+            return new Tests(hardwareMap -> new Mecanum(hardwareMap, Constants.test_drivetrainConfig), (hardwareMap -> new PinpointLocalizer(hardwareMap, Constants.test_localizerConfig)), () -> new Foresight(Constants.test_foresightConfig));
         return new Tests(hardwareMap -> new Mecanum(hardwareMap, Constants.drivetrainConfig), (hardwareMap -> new PinpointLocalizer(hardwareMap, Constants.localizerConfig)), () -> new Foresight(Constants.foresightConfig));
     }
 }
